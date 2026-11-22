@@ -20,9 +20,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ScPlaceholder/curie"
-Source = "https://github.com/ScPlaceholder/curie"
-Research = "https://github.com/ScPlaceholder/curie/blob/main/docs/RELA.md"
+Homepage = "https://github.com/ScPlaceholder/MOTH-Curie"
+Source = "https://github.com/ScPlaceholder/MOTH-Curie"
+Research = "https://github.com/ScPlaceholder/MOTH-Curie/blob/main/docs/RELA.md"
 
 [project.optional-dependencies]
 xcheck = ["qiskit", "cirq"]
