@@ -45,13 +45,14 @@ Option 4 checks Curie against Qiskit and Cirq: it asks first, then downloads the
 **With pip:**
 
 ```
-pip install .                 # from the repository folder; Python 3.10 or newer, no dependencies
+pip install moth-curie        # Python 3.10 or newer, no dependencies
 curie lessons                 # the three lessons, maths beside simulation
 curie bench                   # open the wave bench page in your browser
 curie demo q2                 # a tour: q1 entanglement, q2 programs, q3 the microscope
 ```
 
-`pip install .[xcheck]` also installs Qiskit and Cirq for the cross-check tests. Without installing
+From a clone of this repository, `pip install .` works the same way. `pip install moth-curie[xcheck]`
+also installs Qiskit and Cirq for the cross-check tests. Without installing
 anything, `python -m curie lessons` works from the repository folder, and `viewer/bench.html` opens in
 any browser.
 
