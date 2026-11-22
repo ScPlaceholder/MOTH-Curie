@@ -35,6 +35,8 @@ In a terminal, the lessons print the simulation and the hand maths side by side,
 **The easy way:** double-click **Start Curie.bat** (Windows) or **start-curie.command** (Mac). A
 small menu opens the wave bench in your browser, which needs nothing installed, or runs the lessons
 and tours, which need Python 3.10 or newer. If Python is missing, the menu says where to get it.
+Option 4 checks Curie against Qiskit and Cirq: it asks first, then downloads them into a private
+`.venv-xcheck` folder and runs every test, including the cross-checks.
 
 **With pip:**
 
