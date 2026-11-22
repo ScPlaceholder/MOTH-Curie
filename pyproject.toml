@@ -19,6 +19,11 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
 ]
 
+[project.urls]
+Homepage = "https://github.com/ScPlaceholder/curie"
+Source = "https://github.com/ScPlaceholder/curie"
+Research = "https://github.com/ScPlaceholder/curie/blob/main/docs/RELA.md"
+
 [project.optional-dependencies]
 xcheck = ["qiskit", "cirq"]
 

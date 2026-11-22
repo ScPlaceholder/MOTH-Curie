@@ -1,4 +1,4 @@
-<p align="center"><img src="assets/moth-logo.jpg" width="180" alt="MOTH: Measured Operations, Trained Heuristics"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/ScPlaceholder/curie/main/assets/moth-logo.jpg" width="180" alt="MOTH: Measured Operations, Trained Heuristics"></p>
 
 # Curie
 
@@ -8,7 +8,7 @@
 every step: what each gate did to each amplitude, where two paths interfered, and where two versions of a
 circuit first stop agreeing. It is written to be read, not to be fast.
 
-![The wave bench: as the phase turns from 0 to 180 degrees, detector 1 goes dark and all the light moves to detector 2](docs/screenshots/wave-bench.gif)
+![The wave bench: as the phase turns from 0 to 180 degrees, detector 1 goes dark and all the light moves to detector 2](https://raw.githubusercontent.com/ScPlaceholder/curie/main/docs/screenshots/wave-bench.gif)
 
 *Two paths, one tunable phase. As the phase turns from 0° to 180°, the two arrows arriving at detector 1 swing apart until they cancel, and every bit of the light moves to detector 2. The total never changes. That cancellation is interference, the same effect every quantum algorithm is built on. Open `viewer/bench.html` and drag the slider yourself.*
 
@@ -20,19 +20,19 @@ use Qiskit, Cirq or QuTiP. If you want to see *why* a circuit does what it does,
 
 The wave bench (`curie bench`, or open `viewer/bench.html`): tune a phase and watch one detector go dark.
 
-![The wave bench: a two-path interferometer with a tunable phase](docs/screenshots/waves.jpg)
+![The wave bench: a two-path interferometer with a tunable phase](https://raw.githubusercontent.com/ScPlaceholder/curie/main/docs/screenshots/waves.jpg)
 
 Every wave writes out its maths as you change it, and checks the arithmetic against Curie's own numbers.
 
-![The maths under the interferometer, worked out at the current phase](docs/screenshots/wave-maths.jpg)
+![The maths under the interferometer, worked out at the current phase](https://raw.githubusercontent.com/ScPlaceholder/curie/main/docs/screenshots/wave-maths.jpg)
 
 The Qubits tab steps through circuits gate by gate. Here a CNOT has just entangled two qubits.
 
-![Two qubits after a CNOT: 00 and 11 at 50% each, with the step's maths](docs/screenshots/qubits-entangle.jpg)
+![Two qubits after a CNOT: 00 and 11 at 50% each, with the step's maths](https://raw.githubusercontent.com/ScPlaceholder/curie/main/docs/screenshots/qubits-entangle.jpg)
 
 In a terminal, the lessons print the simulation and the hand maths side by side, and check they agree.
 
-![A lesson in the terminal: the Hadamard matrix, the sums, and the agreement check](docs/screenshots/terminal-lesson.png)
+![A lesson in the terminal: the Hadamard matrix, the sums, and the agreement check](https://raw.githubusercontent.com/ScPlaceholder/curie/main/docs/screenshots/terminal-lesson.png)
 
 ## Install
 
@@ -151,7 +151,7 @@ Curie is written in **RELA** (Relational Event and Amplitude Mathematics): every
 and a phase, multiplying is native, and adding happens only through interference. It is chosen because it
 makes the arithmetic easy to read, not for speed. We also tested whether RELA does anything better than
 standard mathematics; five ideas were put to a fair test, and none survived. The full research, with the
-results table, proofs, reviews and measurements, is in [docs/RELA.md](docs/RELA.md).
+results table, proofs, reviews and measurements, is in [docs/RELA.md](https://github.com/ScPlaceholder/curie/blob/main/docs/RELA.md).
 
 ## How it is checked
 
