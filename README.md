@@ -8,6 +8,10 @@
 every step: what each gate did to each amplitude, where two paths interfered, and where two versions of a
 circuit first stop agreeing. It is written to be read, not to be fast.
 
+![The wave bench: as the phase turns from 0 to 180 degrees, detector 1 goes dark and all the light moves to detector 2](docs/screenshots/wave-bench.gif)
+
+*Two paths, one tunable phase. As the phase turns from 0° to 180°, the two arrows arriving at detector 1 swing apart until they cancel, and every bit of the light moves to detector 2. The total never changes. That cancellation is interference, the same effect every quantum algorithm is built on. Open `viewer/bench.html` and drag the slider yourself.*
+
 Curie is **not** a general-purpose simulator. It holds every amplitude of the state (so at most 12 qubits),
 it has no noise model, and it does not talk to quantum hardware. If you need speed, many qubits, or noise,
 use Qiskit, Cirq or QuTiP. If you want to see *why* a circuit does what it does, Curie is for that.
