@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "moth-curie"
+version = "0.1.0"
+description = "A quantum-computation microscope: build small circuits and see what every gate did to every amplitude. A MOTH project."
+readme = "README.md"
+license = {text = "Apache-2.0"}
+authors = [{name = "SC Placeholder"}, {name = "Elah"}]
+requires-python = ">=3.10"
+dependencies = []
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+
+[project.optional-dependencies]
+xcheck = ["qiskit", "cirq"]
+
+[project.scripts]
+curie = "curie.cli:main"
+
+[tool.setuptools]
+packages = ["curie"]
+
+[tool.setuptools.package-data]
+curie = ["bench.html"]

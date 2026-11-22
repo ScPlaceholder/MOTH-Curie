@@ -1,0 +1,4 @@
+# Launchers must keep their native line endings, or they break when double-clicked.
+*.command text eol=lf
+*.sh      text eol=lf
+*.bat     text eol=crlf

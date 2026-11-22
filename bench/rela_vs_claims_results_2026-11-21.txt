@@ -1,0 +1,44 @@
+PREDICTIONS, written before the first run and printed at the top of every run so they cannot move:
+  H3-P1  RELA's phasor statistic equals the Rayleigh statistic for every stream (|difference| < 1e-9).
+         They are the same mathematics; if this fails, the identity in the review is wrong.
+  H3-P2  So RELA and Rayleigh detect beacons at identical rates, at the same false-alarm rate.
+  H3-P3  Against clock-locked beacons (0% jitter) in HEAVY background, the phasor detectors beat the
+         gap test (the review's one stated niche). With 50% jitter, the gap test beats both.
+  H3-P4  RELA costs far more per event than the gap test (about F times, F = frequencies scanned).
+  H2-P1  RELA's Gate product agrees with a plain complex 2x2 product to < 1e-9.
+  H2-P2  On non-commuting chains RELA is SLOWER than plain complex (addition is the hard operation).
+  H2-P3  On commuting (diagonal) chains RELA's angle-addition shortcut is real, and it is exactly the
+         conventional log-domain method: summing angles in plain floats gives the same answer.
+  H1-P1  A sketch of m RELA (complex) buckets recovers counts no better than 2m real buckets: the
+         errors tie, within noise.
+
+=== H3: beacon detection ===
+window 7200 s, beacon period 300 s, 113 frequencies scanned, 40 streams per cell, threshold at 5% false alarms
+
+  background  jitter   RELA phasor   Rayleigh   gap MAD    (detection rate at 5% false alarms)
+  solo           0%       1.00         1.00       1.00
+  solo          25%       1.00         1.00       1.00
+  solo          50%       0.33         0.33       1.00
+  light          0%       1.00         1.00       0.03
+  light         25%       0.35         0.35       0.07
+  light         50%       0.00         0.00       0.03
+  heavy          0%       0.90         0.90       0.05
+  heavy         25%       0.25         0.25       0.07
+  heavy         50%       0.10         0.10       0.05
+
+  cost per event (microseconds):
+    RELA phasor      427.39
+    Rayleigh          24.11
+    gap MAD            0.31
+  max |RELA - Rayleigh| over every stream: 7.638e-14
+
+=== H2: composition of 2000 gates ===
+  non-commuting chain: RELA 0.0788 s, plain complex 0.0018 s (RELA 43.7x), max disagreement 1.43e-14
+  commuting chain:     RELA polar 0.0071 s, plain log-domain (sum angles) 0.00022 s, plain complex 0.0008 s
+                       RELA vs log-domain answer differ by 9.25e-12
+
+=== H1: count recovery, 2000 items, 64 RELA buckets vs 128 real buckets, 40 trials ===
+  mean relative error on the top-20 items: RELA (m complex) 0.5292, real (2m reals) 0.3151, difference 0.2142 +/- 0.0849 (1 s.e.)
+  RMS relative error:                       RELA (m complex) 2.0704, real (2m reals) 1.3700
+
+== rela_vs_claims COMPLETE in 15.7 s ==

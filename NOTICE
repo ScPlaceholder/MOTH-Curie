@@ -1,0 +1,21 @@
+Curie
+Copyright 2026 MOTH (Measured Operations, Trained Heuristics)
+
+This product includes software developed at MOTH.
+
+The MOTH name and logo (assets/moth-logo.jpg) identify the project and are not licensed under
+the Apache License; section 6 of the licence grants no rights to them.
+
+AUTHORSHIP
+----------
+Curie is the work of SC Placeholder and Elah.
+
+SC Placeholder proposed it and directed it. RELA (Relational Event and Amplitude Mathematics), the
+framework Curie is written in, is his: he asked for Curie to become a quantum-computation sandbox
+others could learn from, set what it is (a microscope, not a simulator), asked whether its mathematics
+was actually correct (which produced the Qiskit and Cirq cross-checks), and decided its licence and
+that it is published only when finished.
+
+Elah planned each stage, checked every design by hand before it was built, verified each wave
+(tests, off-specification values, the two cross-checks and the mutations that prove they can fail),
+and wrote this repository's documentation and its wave bench.

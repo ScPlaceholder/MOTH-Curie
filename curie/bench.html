@@ -1,0 +1,1254 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Curie Wave Bench</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: an optics bench. One wide instrument (the interferometer) on top, two smaller instruments side by side below. */
+:root{
+  --bg:#f3f5f7; --panel:#ffffff; --ink:#15202b; --muted:#5b6876; --rule:#d9e0e6;
+  --beam:#0e7c86; --beam2:#c2611a; --radium:#1f9d55;
+  --f-display:"Space Grotesk",system-ui,sans-serif; --f-body:"Inter",system-ui,sans-serif; --f-data:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1419; --panel:#141e25; --ink:#e3ebf1; --muted:#8e9ca8; --rule:#24323c;
+  --beam:#4fd1c5; --beam2:#f0a35e; --radium:#6ee7a0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1419; --panel:#141e25; --ink:#e3ebf1; --muted:#8e9ca8; --rule:#24323c;
+  --beam:#4fd1c5; --beam2:#f0a35e; --radium:#6ee7a0; color-scheme:dark}
+:root.radium{--beam:var(--radium)}
+.marie{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 70%,transparent);padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.marie[hidden]{display:none}
+.marie-in{max-width:34rem;max-height:100%;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--radium);border-radius:10px;padding:20px 22px;box-shadow:0 0 40px color-mix(in srgb,var(--radium) 35%,transparent)}
+.marie-in h2{margin:0 0 10px;text-wrap:balance}.marie-in p{line-height:1.55;margin:0 0 10px}
+.marie-in table{border-collapse:collapse;margin:4px 0 12px;font-family:"JetBrains Mono",monospace;font-size:13px}.marie-in td{padding:2px 12px 2px 0;vertical-align:top}
+.marie-in blockquote{margin:12px 0;padding-left:12px;border-left:3px solid var(--radium);font-style:italic}
+.marie-in cite{display:block;font-style:normal;color:var(--muted);font-size:12px;margin-top:4px}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1040px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:22px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--f-data);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,5vw,40px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:var(--f-display);font-weight:500;font-size:20px;margin:0}
+p{margin:0;max-width:65ch;color:var(--muted)}
+.lede{color:var(--ink)}
+.bench{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:18px;display:grid;gap:14px;min-width:0}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+@media (max-width:760px){.row{grid-template-columns:1fr}}
+canvas{width:100%;height:auto;display:block;max-width:100%}
+.ctl{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-family:var(--f-data);font-size:13px}
+.ctl label{color:var(--muted)}
+input[type=range]{flex:1 1 220px;accent-color:var(--beam);min-width:0}
+button,select{font:inherit;font-family:var(--f-data);font-size:13px;background:transparent;color:var(--ink);border:1px solid var(--rule);border-radius:6px;padding:6px 12px;cursor:pointer}
+button:hover,select:hover{border-color:var(--beam)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--beam);outline-offset:2px}
+.readout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;font-family:var(--f-data);font-variant-numeric:tabular-nums}
+.readout div{border-top:1px solid var(--rule);padding-top:8px;min-width:0}
+.readout b{display:block;font-size:22px;font-weight:600}
+.readout span{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.d1 b{color:var(--beam)} .d2 b{color:var(--beam2)}
+.order{display:grid;gap:10px;font-family:var(--f-data);font-size:14px;font-variant-numeric:tabular-nums}
+.order .line{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--rule);padding-top:8px;flex-wrap:wrap}
+.order em{font-style:normal;color:var(--muted)}
+footer{font-family:var(--f-data);font-size:12px;color:var(--muted)}
+/* Qubit tab */
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--rule);padding-bottom:10px;flex-wrap:wrap;align-items:center}
+.brand{display:inline-flex;align-items:center;gap:8px;margin-right:8px;font:600 12px/1 var(--f-data, monospace);letter-spacing:.12em;color:var(--muted);text-decoration:none}
+.brand img{width:46px;height:46px;border-radius:50%;display:block;box-shadow:0 0 0 1px var(--rule)}
+.tabs button{border-radius:999px;padding:7px 16px}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.qpick{display:flex;gap:8px;flex-wrap:wrap}
+.qpick button[aria-pressed="true"]{border-color:var(--beam);color:var(--beam);font-weight:600}
+.strip{display:flex;gap:6px;flex-wrap:wrap;font-family:var(--f-data);font-size:13px}
+.strip button{padding:5px 9px}
+.strip button.now{background:var(--beam);border-color:var(--beam);color:var(--panel)}
+.strip button.done{border-color:var(--beam)}
+.cap{color:var(--ink);min-height:3.2em;max-width:65ch}
+.amps{display:grid;gap:8px}
+.amp{display:grid;grid-template-columns:3.2em 1fr 3.6em 30px;gap:10px;align-items:center;font-family:var(--f-data);font-variant-numeric:tabular-nums;font-size:14px}
+.amp .lab{color:var(--muted);letter-spacing:.08em}
+.amp .track{height:18px;background:var(--rule);border-radius:4px;overflow:hidden;min-width:0}
+.amp .fill{display:block;height:100%;background:var(--beam);width:0;transition:width .35s ease}
+.amp .pct{text-align:right}
+.amp svg{display:block}
+.nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-family:var(--f-data);font-size:13px}
+.nav button{min-width:64px}
+.check{font-family:var(--f-data);font-size:12px;color:var(--muted);border-top:1px solid var(--rule);padding-top:8px}
+.check b{color:var(--beam)} .check .bad{color:var(--beam2)}
+.build{display:grid;gap:10px}
+.pal{display:flex;gap:6px;flex-wrap:wrap}
+.pal button{min-width:52px}
+.pal button.arm{background:var(--beam2);border-color:var(--beam2);color:var(--panel)}
+.hint{font-family:var(--f-data);font-size:12px;color:var(--muted);min-height:1.4em}
+/* The maths, step by step */
+.mq-form{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;font-family:var(--f-data);font-size:13px}
+.mq-form label{color:var(--muted)}
+.mq-form input[type=number]{font:inherit;width:6.5em;background:transparent;color:var(--ink);border:1px solid var(--rule);border-radius:6px;padding:6px 8px}
+.mq-form .grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.mq-form .grp[hidden]{display:none}
+.wm .mq-lines{overflow-x:visible}
+.own{border-top:1px dashed var(--rule);padding-top:10px;margin-top:6px;flex-wrap:wrap;gap:8px 14px}
+.own b{font-weight:500;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.own label{display:inline-flex;align-items:center;gap:4px}
+.own input[type=number]{width:5.5em}
+.spec-ctl{display:grid;grid-template-columns:auto auto 1fr auto;gap:6px 8px;align-items:center}
+.spec-ctl input[type=range]{width:100%;min-width:0}
+.wm .mq-line code{white-space:pre-wrap;overflow-wrap:anywhere}
+.mq-sub{font-family:var(--f-data);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0}
+.mq-step{display:grid;gap:12px;border-top:1px solid var(--rule);padding-top:12px;min-width:0}
+.mq-title{font-family:var(--f-display);font-weight:500;font-size:17px;color:var(--ink);margin:0}
+.mq-why{color:var(--muted);max-width:65ch}
+.mq-mat{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--f-data);font-size:14px;font-variant-numeric:tabular-nums}
+.mq-mat .grid{display:grid;grid-template-columns:auto auto;gap:4px 18px;padding:4px 12px;border-left:2px solid var(--ink);border-right:2px solid var(--ink);border-radius:4px}
+.mq-mat .grid span{text-align:right}
+.mq-lines{display:grid;gap:8px;font-family:var(--f-data);font-size:13.5px;font-variant-numeric:tabular-nums;overflow-x:auto;min-width:0}
+.mq-line{display:grid;gap:3px;min-width:0}
+.mq-line code{font:inherit;white-space:nowrap}
+.tag{justify-self:start;font-size:11.5px;letter-spacing:.04em;border-radius:999px;padding:2px 9px;border:1px solid var(--rule);color:var(--muted)}
+.tag.add{border-color:var(--beam);color:var(--beam)}
+.tag.cancel{border-color:var(--beam2);color:var(--beam2)}
+.mq-tablebox{overflow-x:auto;min-width:0}
+.mq-table{border-collapse:collapse;font-family:var(--f-data);font-size:13px;font-variant-numeric:tabular-nums;min-width:100%}
+.mq-table th,.mq-table td{text-align:right;padding:5px 10px;border-bottom:1px solid var(--rule);white-space:nowrap}
+.mq-table th{font-weight:400;color:var(--muted);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase}
+.mq-table th:first-child,.mq-table td:first-child{text-align:left}
+.mq-table tr.zero td{color:var(--muted)}
+.mq-ok{font-family:var(--f-data);font-size:12.5px;color:var(--muted)}
+.mq-ok b{color:var(--beam)} .mq-ok .bad{color:var(--beam2);font-weight:600}
+@media (prefers-reduced-motion: reduce){.amp .fill{transition:none}}
+</style>
+<div class="wrap">
+<nav class="tabs" aria-label="Bench"><span class="brand"><img src="data:image/jpeg;base64,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" alt="MOTH logo: a moth over an EM monogram" width="46" height="46">MOTH</span><button id="t-waves" type="button" aria-pressed="true">Waves</button><button id="t-qubits" type="button" aria-pressed="false">Qubits</button></nav>
+<div id="v-waves">
+<header>
+  <div class="eyebrow">Curie · RELA engine v2 · every frame computed by Curie</div>
+  <h1>The gnomes' interferometer</h1>
+  <p class="lede">In RELA, multiplying is easy: scale and turn. Adding is the hard part, because two waves don't stack, they interfere. Drag the phase and watch one detector go dark while the other takes all the light.</p>
+</header>
+
+<section class="bench" aria-labelledby="mzi-h">
+  <h2 id="mzi-h">Two paths, one tunable phase</h2>
+  <canvas id="mzi" width="1000" height="360" aria-label="Interferometer diagram"></canvas>
+  <div class="ctl">
+    <label for="phase">phase φ</label>
+    <input id="phase" type="range" min="0" max="360" step="1" value="120">
+    <span id="phaseval">120°</span>
+    <button id="sweep" type="button">Sweep</button>
+  </div>
+  <div class="ctl own"><b>your numbers</b><label>φ° <input id="mz-phi" type="number" step="any" value="120"></label><label>path 1 <input id="mz-a" type="number" step="0.05" min="0" max="1" value="0.5"></label><label>path 2 <input id="mz-b" type="number" step="0.05" min="0" max="1" value="0.5"></label></div>
+  <div class="readout">
+    <div class="d1"><span>Detector 1</span><b id="r1">0.250</b></div>
+    <div class="d2"><span>Detector 2</span><b id="r2">0.750</b></div>
+    <div><span>Total light</span><b id="rt">1.000</b></div>
+  </div>
+  <p>The arrows beside each detector are the two paths' contributions, laid tip to tail. Their sum is the amplitude that arrives, and its length squared is the light you see. Theory says detector 1 reads cos²(φ/2).</p>
+  <div class="mq-step wm" id="wm-mzi" aria-live="polite"></div>
+</section>
+
+<div class="row">
+<section class="bench" aria-labelledby="ring-h">
+  <h2 id="ring-h">A pulse walking a ring</h2>
+  <canvas id="ring" width="480" height="420" aria-label="Ring of event nodes"></canvas>
+  <div class="ctl">
+    <label for="nodes">nodes</label>
+    <select id="nodes"><option>4</option><option selected>6</option><option>8</option></select>
+    <button id="play" type="button">Play</button>
+    <button id="step" type="button">Step</button>
+    <span id="stepval">step 0</span>
+  </div>
+  <div class="ctl own"><b>your numbers</b><label>nodes <input id="rg-n" type="number" min="2" max="24" step="1" value="6"></label><label>turn per hop° <input id="rg-turn" type="number" step="any" placeholder="360/n"></label><label>start length <input id="rg-r" type="number" step="0.1" min="0" value="1"></label><label>start angle° <input id="rg-t" type="number" step="any" value="0"></label></div>
+  <p>Each hop turns the phase by one nth of a circle; the hand on each node shows its phase. After n hops of one nth of a circle, the pulse is home at its starting amplitude. Try a turn that is not a whole fraction of a circle and it overshoots.</p>
+  <div class="mq-step wm" id="wm-ring" aria-live="polite"></div>
+</section>
+
+<section class="bench" aria-labelledby="ord-h">
+  <h2 id="ord-h">Order matters</h2>
+  <p>Start at 1∠0 and apply two moves, rotate by π/2 and conjugate (flip the phase), in each order. Then interfere each result with 1∠π/2.</p>
+  <div class="ctl own"><b>your numbers</b><label>start <input id="od-r" type="number" step="0.1" value="1">∠<input id="od-t" type="number" step="any" value="0">°</label><label>rotate by <input id="od-a" type="number" step="any" value="90">°</label><label>interfere with <input id="od-wr" type="number" step="0.1" value="1">∠<input id="od-wt" type="number" step="any" value="90">°</label></div>
+  <div class="order" id="order"></div>
+  <p>With the starting numbers: same two moves, opposite outcomes. Rotations alone commute; the flip is what makes order visible, except when the rotation is a half turn.</p>
+  <div class="mq-step wm" id="wm-order" aria-live="polite"></div>
+</section>
+</div>
+
+<div class="row">
+<section class="bench" aria-labelledby="roots-h">
+  <h2 id="roots-h">Every root, not just one</h2>
+  <canvas id="roots" width="480" height="420" aria-label="Roots on the circle"></canvas>
+  <div class="ctl">
+    <label for="rootn">n</label>
+    <input id="rootn" type="range" min="2" max="12" step="1" value="6">
+    <span id="rootnval">6</span>
+    <label for="rootof">of</label>
+    <select id="rootof"><option value="one">1∠0</option><option value="z">1.6∠1.1</option><option value="own">your own</option></select>
+  </div>
+  <div class="ctl own"><b>your numbers</b><label>roots of <input id="rt-r" type="number" step="0.1" min="0.01" value="2">∠<input id="rt-t" type="number" step="any" value="45">°</label></div>
+  <p id="rootnote">To the gnomes the nth root is n things, spaced evenly round the circle. Interfere all the roots of 1 together and they cancel to nothing.</p>
+  <div class="mq-step wm" id="wm-roots" aria-live="polite"></div>
+</section>
+
+<section class="bench" aria-labelledby="spec-h">
+  <h2 id="spec-h">Hearing by interference</h2>
+  <canvas id="spec" width="480" height="420" aria-label="Signal and its spectrum"></canvas>
+  <div class="ctl spec-ctl" id="specctl"></div>
+  <div class="ctl"><button id="specreset" type="button">Curie's three tones</button><span id="specsrc">Curie's own run</span></div>
+  <p>Set each tone: how many cycles it makes across the 32 samples, and how loud it is. Top: the signal they add up to. Bottom: what Curie hears when it sums rotating arrows against it. Each tone shows up twice, at its bin and its mirror, and everything else cancels to zero.</p>
+  <div class="mq-step wm" id="wm-spec" aria-live="polite"></div>
+</section>
+</div>
+
+<section class="bench" aria-labelledby="click-h">
+  <h2 id="click-h">The detector clicks</h2>
+  <canvas id="clicks" width="1000" height="200" aria-label="Measurement clicks"></canvas>
+  <div class="ctl">
+    <label for="clickphase">phase φ</label>
+    <select id="clickphase"><option>0</option><option>30</option><option>60</option><option selected>90</option><option>120</option><option>150</option><option>180</option></select>
+    <button id="fire" type="button">Fire 200 photons</button>
+    <span id="clickcount">detector 1: 0 · detector 2: 0</span>
+  </div>
+  <div class="ctl own"><b>your numbers</b><label>φ° <input id="ck-phi" type="number" step="any" value="90"></label><label>seed <input id="ck-seed" type="number" step="1" placeholder="Curie's"></label></div>
+  <p>Each photon lands on one detector or the other; only the odds come from the waves. The tally drifts toward theory, cos² and sin² of φ/2, but never matches it exactly, because these are real draws, seeded and recorded by Curie.</p>
+  <div class="mq-step wm" id="wm-clicks" aria-live="polite"></div>
+</section>
+
+</div>
+<div id="v-qubits" hidden>
+<header>
+  <div class="eyebrow">Curie · quantum sandbox · every preset step computed by Curie</div>
+  <h1>Watch a qubit think</h1>
+  <p class="lede">Pick a circuit and tap through it one gate at a time. The bars are the odds of each answer if you looked right now. The little hands are the wave underneath: paths whose hands point opposite ways cancel when they meet.</p>
+</header>
+
+<section class="bench" aria-labelledby="qv-h">
+  <h2 id="qv-h">Circuits</h2>
+  <div class="qpick" id="qpick" role="group" aria-label="Choose a circuit"></div>
+  <div class="strip" id="strip" aria-label="Gates in order; tap one to jump there"></div>
+  <p class="cap" id="cap" aria-live="polite"></p>
+  <div class="amps" id="amps"></div>
+  <div class="mq-step" id="qmath" aria-live="polite"></div>
+  <div class="nav">
+    <button id="qprev" type="button">Back</button>
+    <button id="qnext" type="button">Next</button>
+    <button id="qplay" type="button">Play</button>
+    <span id="qpos"></span>
+  </div>
+  <div class="check" id="check"></div>
+</section>
+
+<section class="bench build" aria-labelledby="qb-h">
+  <h2 id="qb-h">Build your own</h2>
+  <div class="ctl">
+    <label for="qn">qubits</label>
+    <select id="qn"><option>1</option><option selected>2</option><option>3</option></select>
+    <button id="qundo" type="button">Undo</button>
+    <button id="qclear" type="button">Clear</button>
+    <button id="qshow" type="button">Step through it</button>
+  </div>
+  <div class="pal" id="pal" role="group" aria-label="Gates"></div>
+  <div class="pal" id="qsel" role="group" aria-label="Qubits"></div>
+  <p class="hint" id="hint">Tap a gate, then the qubit it acts on.</p>
+  <div class="strip" id="mine" aria-label="Your circuit"></div>
+  <p>Your circuits run on a small engine in your phone's browser, the same rules as Curie. It is checked against every Curie step above each time this page opens; the line under the circuits says how closely they agree.</p>
+</section>
+
+<section class="bench" aria-labelledby="mq-h">
+  <h2 id="mq-h">The maths, step by step</h2>
+  <p>Every step written out as it runs: the gate's matrix, the sum for each amplitude, and whether the two paths reinforce or cancel. Pick a lesson, or set your own start and add gates with your own values.</p>
+  <div class="qpick" id="mq-lessons" role="group" aria-label="Lessons"></div>
+
+  <p class="mq-sub">Start</p>
+  <div class="mq-form">
+    <label for="mq-n">qubits</label>
+    <select id="mq-n"><option>1</option><option selected>2</option><option>3</option></select>
+    <label for="mq-start">start in</label>
+    <select id="mq-start"></select>
+    <span class="grp" id="mq-custom" hidden>
+      <label for="mq-a">amount of |0⟩</label><input id="mq-a" type="number" step="0.1" value="1">
+      <label for="mq-b">amount of |1⟩</label><input id="mq-b" type="number" step="0.1" value="1">
+    </span>
+  </div>
+
+  <p class="mq-sub">Add a step</p>
+  <div class="mq-form">
+    <label for="mq-gate">gate</label>
+    <select id="mq-gate">
+      <option value="h">H (split or rejoin)</option>
+      <option value="x">X (swap 0 and 1)</option>
+      <option value="z">Z (flip the 1-path)</option>
+      <option value="phase">Phase (turn the 1-path)</option>
+      <option value="ry">Ry (rotate)</option>
+      <option value="cnot">CNOT (controlled swap)</option>
+      <option value="cz">CZ (controlled flip)</option>
+    </select>
+    <label for="mq-q" id="mq-q-l">qubit</label>
+    <select id="mq-q"></select>
+    <span class="grp" id="mq-tgrp" hidden><label for="mq-t">target</label><select id="mq-t"></select></span>
+    <span class="grp" id="mq-angrp" hidden><label for="mq-ang">angle (degrees)</label><input id="mq-ang" type="number" step="15" value="90"></span>
+    <button id="mq-add" type="button">Add step</button>
+    <button id="mq-undo" type="button">Undo</button>
+    <button id="mq-clear" type="button">Clear</button>
+  </div>
+  <p class="hint" id="mq-hint" aria-live="polite"></p>
+
+  <div class="strip" id="mq-strip" aria-label="Steps; tap one to see its maths"></div>
+  <div class="nav">
+    <button id="mq-prev" type="button">Back</button>
+    <button id="mq-next" type="button">Next</button>
+    <span id="mq-pos"></span>
+  </div>
+  <div class="mq-step" id="mq-step" aria-live="polite"></div>
+  <p class="mq-ok" id="mq-selfcheck"></p>
+</section>
+</div>
+<aside id="marie" class="marie" hidden role="dialog" aria-modal="true" aria-labelledby="marie-h">
+<div class="marie-in">
+  <h2 id="marie-h">Maria Skłodowska-Curie, 1867–1934</h2>
+  <p>Born in Warsaw, she left for Paris to study, because women could not enrol at a university at home. With Pierre Curie she found two new elements in tonnes of pitchblende, and named the first polonium, after a country that was not then on any map.</p>
+  <table><tr><td>1903</td><td>Nobel Prize in Physics, with Pierre Curie and Henri Becquerel, for the study of radioactivity</td></tr>
+  <tr><td>1911</td><td>Nobel Prize in Chemistry, for the discovery of polonium and radium</td></tr></table>
+  <p>The first woman to win a Nobel Prize, and still the only person to win one in two different sciences. Her notebooks are still radioactive; the library that keeps them stores them in lead-lined boxes.</p>
+  <p>She looked at something nobody could see and measured it until it could not be argued with. That is what this little microscope tries to do with amplitudes. While this card is open, the waves glow radium green.</p>
+  <blockquote>Nothing in life is to be feared, it is only to be understood.<cite>attributed to Marie Curie</cite></blockquote>
+  <button id="marie-x" type="button">Close</button>
+</div>
+</aside>
+<footer>MOTH Curie · by SC Placeholder and Elah. Wave frames and every preset circuit step were computed by the Python engine and embedded here; the page draws them, and runs only your own circuits itself.</footer>
+</div>
+
+<script>
+const DATA = {"mzi":[[0,1.0,0.0,1.0,1.570796,0.0,1.570796],[1,0.999924,7.6e-05,0.999962,1.579523,0.008727,-1.56207],[2,0.999695,0.000305,0.999848,1.58825,0.017452,-1.553343],[3,0.999315,0.000685,0.999657,1.596976,0.026177,-1.544616],[4,0.998782,0.001218,0.999391,1.605703,0.034899,-1.53589],[5,0.998097,0.001903,0.999048,1.61443,0.043619,-1.527163],[6,0.997261,0.002739,0.99863,1.623156,0.052336,-1.518436],[7,0.996273,0.003727,0.998135,1.631883,0.061049,-1.50971],[8,0.995134,0.004866,0.997564,1.640609,0.069756,-1.500983],[9,0.993844,0.006156,0.996917,1.649336,0.078459,-1.492257],[10,0.992404,0.007596,0.996195,1.658063,0.087156,-1.48353],[11,0.990814,0.009186,0.995396,1.666789,0.095846,-1.474803],[12,0.989074,0.010926,0.994522,1.675516,0.104528,-1.466077],[13,0.987185,0.012815,0.993572,1.684243,0.113203,-1.45735],[14,0.985148,0.014852,0.992546,1.692969,0.121869,-1.448623],[15,0.982963,0.017037,0.991445,1.701696,0.130526,-1.439897],[16,0.980631,0.019369,0.990268,1.710423,0.139173,-1.43117],[17,0.978152,0.021848,0.989016,1.719149,0.147809,-1.422443],[18,0.975528,0.024472,0.987688,1.727876,0.156434,-1.413717],[19,0.972759,0.027241,0.986286,1.736603,0.165048,-1.40499],[20,0.969846,0.030154,0.984808,1.745329,0.173648,-1.396263],[21,0.96679,0.03321,0.983255,1.754056,0.182236,-1.387537],[22,0.963592,0.036408,0.981627,1.762783,0.190809,-1.37881],[23,0.960252,0.039748,0.979925,1.771509,0.199368,-1.370083],[24,0.956773,0.043227,0.978148,1.780236,0.207912,-1.361357],[25,0.953154,0.046846,0.976296,1.788962,0.21644,-1.35263],[26,0.949397,0.050603,0.97437,1.797689,0.224951,-1.343904],[27,0.945503,0.054497,0.97237,1.806416,0.233445,-1.335177],[28,0.941474,0.058526,0.970296,1.815142,0.241922,-1.32645],[29,0.93731,0.06269,0.968148,1.823869,0.25038,-1.317724],[30,0.933013,0.066987,0.965926,1.832596,0.258819,-1.308997],[31,0.928584,0.071416,0.96363,1.841322,0.267238,-1.30027],[32,0.924024,0.075976,0.961262,1.850049,0.275637,-1.291544],[33,0.919335,0.080665,0.95882,1.858776,0.284015,-1.282817],[34,0.914519,0.085481,0.956305,1.867502,0.292372,-1.27409],[35,0.909576,0.090424,0.953717,1.876229,0.300706,-1.265364],[36,0.904508,0.095492,0.951057,1.884956,0.309017,-1.256637],[37,0.899318,0.100682,0.948324,1.893682,0.317305,-1.24791],[38,0.894005,0.105995,0.945519,1.902409,0.325568,-1.239184],[39,0.888573,0.111427,0.942641,1.911136,0.333807,-1.230457],[40,0.883022,0.116978,0.939693,1.919862,0.34202,-1.22173],[41,0.877355,0.122645,0.936672,1.928589,0.350207,-1.213004],[42,0.871572,0.128428,0.93358,1.937315,0.358368,-1.204277],[43,0.865677,0.134323,0.930418,1.946042,0.366501,-1.195551],[44,0.85967,0.14033,0.927184,1.954769,0.374607,-1.186824],[45,0.853553,0.146447,0.92388,1.963495,0.382683,-1.178097],[46,0.847329,0.152671,0.920505,1.972222,0.390731,-1.169371],[47,0.840999,0.159001,0.91706,1.980949,0.398749,-1.160644],[48,0.834565,0.165435,0.913545,1.989675,0.406737,-1.151917],[49,0.82803,0.17197,0.909961,1.998402,0.414693,-1.143191],[50,0.821394,0.178606,0.906308,2.007129,0.422618,-1.134464],[51,0.81466,0.18534,0.902585,2.015855,0.430511,-1.125737],[52,0.807831,0.192169,0.898794,2.024582,0.438371,-1.117011],[53,0.800908,0.199092,0.894934,2.033309,0.446198,-1.108284],[54,0.793893,0.206107,0.891007,2.042035,0.45399,-1.099557],[55,0.786788,0.213212,0.887011,2.050762,0.461749,-1.090831],[56,0.779596,0.220404,0.882948,2.059489,0.469472,-1.082104],[57,0.77232,0.22768,0.878817,2.068215,0.477159,-1.073377],[58,0.76496,0.23504,0.87462,2.076942,0.48481,-1.064651],[59,0.757519,0.242481,0.870356,2.085668,0.492424,-1.055924],[60,0.75,0.25,0.866025,2.094395,0.5,-1.047198],[61,0.742405,0.257595,0.861629,2.103122,0.507538,-1.038471],[62,0.734736,0.265264,0.857167,2.111848,0.515038,-1.029744],[63,0.726995,0.273005,0.85264,2.120575,0.522499,-1.021018],[64,0.719186,0.280814,0.848048,2.129302,0.529919,-1.012291],[65,0.711309,0.288691,0.843391,2.138028,0.5373,-1.003564],[66,0.703368,0.296632,0.838671,2.146755,0.544639,-0.994838],[67,0.695366,0.304634,0.833886,2.155482,0.551937,-0.986111],[68,0.687303,0.312697,0.829038,2.164208,0.559193,-0.977384],[69,0.679184,0.320816,0.824126,2.172935,0.566406,-0.968658],[70,0.67101,0.32899,0.819152,2.181662,0.573576,-0.959931],[71,0.662784,0.337216,0.814116,2.190388,0.580703,-0.951204],[72,0.654508,0.345492,0.809017,2.199115,0.587785,-0.942478],[73,0.646186,0.353814,0.803857,2.207842,0.594823,-0.933751],[74,0.637819,0.362181,0.798636,2.216568,0.601815,-0.925025],[75,0.62941,0.37059,0.793353,2.225295,0.608761,-0.916298],[76,0.620961,0.379039,0.788011,2.234021,0.615661,-0.907571],[77,0.612476,0.387524,0.782608,2.242748,0.622515,-0.898845],[78,0.603956,0.396044,0.777146,2.251475,0.62932,-0.890118],[79,0.595404,0.404596,0.771625,2.260201,0.636078,-0.881391],[80,0.586824,0.413176,0.766044,2.268928,0.642788,-0.872665],[81,0.578217,0.421783,0.760406,2.277655,0.649448,-0.863938],[82,0.569587,0.430413,0.75471,2.286381,0.656059,-0.855211],[83,0.560935,0.439065,0.748956,2.295108,0.66262,-0.846485],[84,0.552264,0.447736,0.743145,2.303835,0.669131,-0.837758],[85,0.543578,0.456422,0.737277,2.312561,0.67559,-0.829031],[86,0.534878,0.465122,0.731354,2.321288,0.681998,-0.820305],[87,0.526168,0.473832,0.725374,2.330015,0.688355,-0.811578],[88,0.51745,0.48255,0.71934,2.338741,0.694658,-0.802851],[89,0.508726,0.491274,0.71325,2.347468,0.700909,-0.794125],[90,0.5,0.5,0.707107,2.356194,0.707107,-0.785398],[91,0.491274,0.508726,0.700909,2.364921,0.71325,-0.776672],[92,0.48255,0.51745,0.694658,2.373648,0.71934,-0.767945],[93,0.473832,0.526168,0.688355,2.382374,0.725374,-0.759218],[94,0.465122,0.534878,0.681998,2.391101,0.731354,-0.750492],[95,0.456422,0.543578,0.67559,2.399828,0.737277,-0.741765],[96,0.447736,0.552264,0.669131,2.408554,0.743145,-0.733038],[97,0.439065,0.560935,0.66262,2.417281,0.748956,-0.724312],[98,0.430413,0.569587,0.656059,2.426008,0.75471,-0.715585],[99,0.421783,0.578217,0.649448,2.434734,0.760406,-0.706858],[100,0.413176,0.586824,0.642788,2.443461,0.766044,-0.698132],[101,0.404596,0.595404,0.636078,2.452188,0.771625,-0.689405],[102,0.396044,0.603956,0.62932,2.460914,0.777146,-0.680678],[103,0.387524,0.612476,0.622515,2.469641,0.782608,-0.671952],[104,0.379039,0.620961,0.615661,2.478368,0.788011,-0.663225],[105,0.37059,0.62941,0.608761,2.487094,0.793353,-0.654498],[106,0.362181,0.637819,0.601815,2.495821,0.798636,-0.645772],[107,0.353814,0.646186,0.594823,2.504547,0.803857,-0.637045],[108,0.345492,0.654508,0.587785,2.513274,0.809017,-0.628319],[109,0.337216,0.662784,0.580703,2.522001,0.814116,-0.619592],[110,0.32899,0.67101,0.573576,2.530727,0.819152,-0.610865],[111,0.320816,0.679184,0.566406,2.539454,0.824126,-0.602139],[112,0.312697,0.687303,0.559193,2.548181,0.829038,-0.593412],[113,0.304634,0.695366,0.551937,2.556907,0.833886,-0.584685],[114,0.296632,0.703368,0.544639,2.565634,0.838671,-0.575959],[115,0.288691,0.711309,0.5373,2.574361,0.843391,-0.567232],[116,0.280814,0.719186,0.529919,2.583087,0.848048,-0.558505],[117,0.273005,0.726995,0.522499,2.591814,0.85264,-0.549779],[118,0.265264,0.734736,0.515038,2.600541,0.857167,-0.541052],[119,0.257595,0.742405,0.507538,2.609267,0.861629,-0.532325],[120,0.25,0.75,0.5,2.617994,0.866025,-0.523599],[121,0.242481,0.757519,0.492424,2.626721,0.870356,-0.514872],[122,0.23504,0.76496,0.48481,2.635447,0.87462,-0.506145],[123,0.22768,0.77232,0.477159,2.644174,0.878817,-0.497419],[124,0.220404,0.779596,0.469472,2.6529,0.882948,-0.488692],[125,0.213212,0.786788,0.461749,2.661627,0.887011,-0.479966],[126,0.206107,0.793893,0.45399,2.670354,0.891007,-0.471239],[127,0.199092,0.800908,0.446198,2.67908,0.894934,-0.462512],[128,0.192169,0.807831,0.438371,2.687807,0.898794,-0.453786],[129,0.18534,0.81466,0.430511,2.696534,0.902585,-0.445059],[130,0.178606,0.821394,0.422618,2.70526,0.906308,-0.436332],[131,0.17197,0.82803,0.414693,2.713987,0.909961,-0.427606],[132,0.165435,0.834565,0.406737,2.722714,0.913545,-0.418879],[133,0.159001,0.840999,0.398749,2.73144,0.91706,-0.410152],[134,0.152671,0.847329,0.390731,2.740167,0.920505,-0.401426],[135,0.146447,0.853553,0.382683,2.748894,0.92388,-0.392699],[136,0.14033,0.85967,0.374607,2.75762,0.927184,-0.383972],[137,0.134323,0.865677,0.366501,2.766347,0.930418,-0.375246],[138,0.128428,0.871572,0.358368,2.775074,0.93358,-0.366519],[139,0.122645,0.877355,0.350207,2.7838,0.936672,-0.357792],[140,0.116978,0.883022,0.34202,2.792527,0.939693,-0.349066],[141,0.111427,0.888573,0.333807,2.801253,0.942641,-0.340339],[142,0.105995,0.894005,0.325568,2.80998,0.945519,-0.331613],[143,0.100682,0.899318,0.317305,2.818707,0.948324,-0.322886],[144,0.095492,0.904508,0.309017,2.827433,0.951057,-0.314159],[145,0.090424,0.909576,0.300706,2.83616,0.953717,-0.305433],[146,0.085481,0.914519,0.292372,2.844887,0.956305,-0.296706],[147,0.080665,0.919335,0.284015,2.853613,0.95882,-0.287979],[148,0.075976,0.924024,0.275637,2.86234,0.961262,-0.279253],[149,0.071416,0.928584,0.267238,2.871067,0.96363,-0.270526],[150,0.066987,0.933013,0.258819,2.879793,0.965926,-0.261799],[151,0.06269,0.93731,0.25038,2.88852,0.968148,-0.253073],[152,0.058526,0.941474,0.241922,2.897247,0.970296,-0.244346],[153,0.054497,0.945503,0.233445,2.905973,0.97237,-0.235619],[154,0.050603,0.949397,0.224951,2.9147,0.97437,-0.226893],[155,0.046846,0.953154,0.21644,2.923426,0.976296,-0.218166],[156,0.043227,0.956773,0.207912,2.932153,0.978148,-0.20944],[157,0.039748,0.960252,0.199368,2.94088,0.979925,-0.200713],[158,0.036408,0.963592,0.190809,2.949606,0.981627,-0.191986],[159,0.03321,0.96679,0.182236,2.958333,0.983255,-0.18326],[160,0.030154,0.969846,0.173648,2.96706,0.984808,-0.174533],[161,0.027241,0.972759,0.165048,2.975786,0.986286,-0.165806],[162,0.024472,0.975528,0.156434,2.984513,0.987688,-0.15708],[163,0.021848,0.978152,0.147809,2.99324,0.989016,-0.148353],[164,0.019369,0.980631,0.139173,3.001966,0.990268,-0.139626],[165,0.017037,0.982963,0.130526,3.010693,0.991445,-0.1309],[166,0.014852,0.985148,0.121869,3.01942,0.992546,-0.122173],[167,0.012815,0.987185,0.113203,3.028146,0.993572,-0.113446],[168,0.010926,0.989074,0.104528,3.036873,0.994522,-0.10472],[169,0.009186,0.990814,0.095846,3.0456,0.995396,-0.095993],[170,0.007596,0.992404,0.087156,3.054326,0.996195,-0.087266],[171,0.006156,0.993844,0.078459,3.063053,0.996917,-0.07854],[172,0.004866,0.995134,0.069756,3.071779,0.997564,-0.069813],[173,0.003727,0.996273,0.061049,3.080506,0.998135,-0.061087],[174,0.002739,0.997261,0.052336,3.089233,0.99863,-0.05236],[175,0.001903,0.998097,0.043619,3.097959,0.999048,-0.043633],[176,0.001218,0.998782,0.034899,3.106686,0.999391,-0.034907],[177,0.000685,0.999315,0.026177,3.115413,0.999657,-0.02618],[178,0.000305,0.999695,0.017452,3.124139,0.999848,-0.017453],[179,7.6e-05,0.999924,0.008727,3.132866,0.999962,-0.008727],[180,0.0,1.0,0.0,0.0,1.0,0.0],[181,7.6e-05,0.999924,0.008727,0.008727,0.999962,0.008727],[182,0.000305,0.999695,0.017452,0.017453,0.999848,0.017453],[183,0.000685,0.999315,0.026177,0.02618,0.999657,0.02618],[184,0.001218,0.998782,0.034899,0.034907,0.999391,0.034907],[185,0.001903,0.998097,0.043619,0.043633,0.999048,0.043633],[186,0.002739,0.997261,0.052336,0.05236,0.99863,0.05236],[187,0.003727,0.996273,0.061049,0.061087,0.998135,0.061087],[188,0.004866,0.995134,0.069756,0.069813,0.997564,0.069813],[189,0.006156,0.993844,0.078459,0.07854,0.996917,0.07854],[190,0.007596,0.992404,0.087156,0.087266,0.996195,0.087266],[191,0.009186,0.990814,0.095846,0.095993,0.995396,0.095993],[192,0.010926,0.989074,0.104528,0.10472,0.994522,0.10472],[193,0.012815,0.987185,0.113203,0.113446,0.993572,0.113446],[194,0.014852,0.985148,0.121869,0.122173,0.992546,0.122173],[195,0.017037,0.982963,0.130526,0.1309,0.991445,0.1309],[196,0.019369,0.980631,0.139173,0.139626,0.990268,0.139626],[197,0.021848,0.978152,0.147809,0.148353,0.989016,0.148353],[198,0.024472,0.975528,0.156434,0.15708,0.987688,0.15708],[199,0.027241,0.972759,0.165048,0.165806,0.986286,0.165806],[200,0.030154,0.969846,0.173648,0.174533,0.984808,0.174533],[201,0.03321,0.96679,0.182236,0.18326,0.983255,0.18326],[202,0.036408,0.963592,0.190809,0.191986,0.981627,0.191986],[203,0.039748,0.960252,0.199368,0.200713,0.979925,0.200713],[204,0.043227,0.956773,0.207912,0.20944,0.978148,0.20944],[205,0.046846,0.953154,0.21644,0.218166,0.976296,0.218166],[206,0.050603,0.949397,0.224951,0.226893,0.97437,0.226893],[207,0.054497,0.945503,0.233445,0.235619,0.97237,0.235619],[208,0.058526,0.941474,0.241922,0.244346,0.970296,0.244346],[209,0.06269,0.93731,0.25038,0.253073,0.968148,0.253073],[210,0.066987,0.933013,0.258819,0.261799,0.965926,0.261799],[211,0.071416,0.928584,0.267238,0.270526,0.96363,0.270526],[212,0.075976,0.924024,0.275637,0.279253,0.961262,0.279253],[213,0.080665,0.919335,0.284015,0.287979,0.95882,0.287979],[214,0.085481,0.914519,0.292372,0.296706,0.956305,0.296706],[215,0.090424,0.909576,0.300706,0.305433,0.953717,0.305433],[216,0.095492,0.904508,0.309017,0.314159,0.951057,0.314159],[217,0.100682,0.899318,0.317305,0.322886,0.948324,0.322886],[218,0.105995,0.894005,0.325568,0.331613,0.945519,0.331613],[219,0.111427,0.888573,0.333807,0.340339,0.942641,0.340339],[220,0.116978,0.883022,0.34202,0.349066,0.939693,0.349066],[221,0.122645,0.877355,0.350207,0.357792,0.936672,0.357792],[222,0.128428,0.871572,0.358368,0.366519,0.93358,0.366519],[223,0.134323,0.865677,0.366501,0.375246,0.930418,0.375246],[224,0.14033,0.85967,0.374607,0.383972,0.927184,0.383972],[225,0.146447,0.853553,0.382683,0.392699,0.92388,0.392699],[226,0.152671,0.847329,0.390731,0.401426,0.920505,0.401426],[227,0.159001,0.840999,0.398749,0.410152,0.91706,0.410152],[228,0.165435,0.834565,0.406737,0.418879,0.913545,0.418879],[229,0.17197,0.82803,0.414693,0.427606,0.909961,0.427606],[230,0.178606,0.821394,0.422618,0.436332,0.906308,0.436332],[231,0.18534,0.81466,0.430511,0.445059,0.902585,0.445059],[232,0.192169,0.807831,0.438371,0.453786,0.898794,0.453786],[233,0.199092,0.800908,0.446198,0.462512,0.894934,0.462512],[234,0.206107,0.793893,0.45399,0.471239,0.891007,0.471239],[235,0.213212,0.786788,0.461749,0.479966,0.887011,0.479966],[236,0.220404,0.779596,0.469472,0.488692,0.882948,0.488692],[237,0.22768,0.77232,0.477159,0.497419,0.878817,0.497419],[238,0.23504,0.76496,0.48481,0.506145,0.87462,0.506145],[239,0.242481,0.757519,0.492424,0.514872,0.870356,0.514872],[240,0.25,0.75,0.5,0.523599,0.866025,0.523599],[241,0.257595,0.742405,0.507538,0.532325,0.861629,0.532325],[242,0.265264,0.734736,0.515038,0.541052,0.857167,0.541052],[243,0.273005,0.726995,0.522499,0.549779,0.85264,0.549779],[244,0.280814,0.719186,0.529919,0.558505,0.848048,0.558505],[245,0.288691,0.711309,0.5373,0.567232,0.843391,0.567232],[246,0.296632,0.703368,0.544639,0.575959,0.838671,0.575959],[247,0.304634,0.695366,0.551937,0.584685,0.833886,0.584685],[248,0.312697,0.687303,0.559193,0.593412,0.829038,0.593412],[249,0.320816,0.679184,0.566406,0.602139,0.824126,0.602139],[250,0.32899,0.67101,0.573576,0.610865,0.819152,0.610865],[251,0.337216,0.662784,0.580703,0.619592,0.814116,0.619592],[252,0.345492,0.654508,0.587785,0.628319,0.809017,0.628319],[253,0.353814,0.646186,0.594823,0.637045,0.803857,0.637045],[254,0.362181,0.637819,0.601815,0.645772,0.798636,0.645772],[255,0.37059,0.62941,0.608761,0.654498,0.793353,0.654498],[256,0.379039,0.620961,0.615661,0.663225,0.788011,0.663225],[257,0.387524,0.612476,0.622515,0.671952,0.782608,0.671952],[258,0.396044,0.603956,0.62932,0.680678,0.777146,0.680678],[259,0.404596,0.595404,0.636078,0.689405,0.771625,0.689405],[260,0.413176,0.586824,0.642788,0.698132,0.766044,0.698132],[261,0.421783,0.578217,0.649448,0.706858,0.760406,0.706858],[262,0.430413,0.569587,0.656059,0.715585,0.75471,0.715585],[263,0.439065,0.560935,0.66262,0.724312,0.748956,0.724312],[264,0.447736,0.552264,0.669131,0.733038,0.743145,0.733038],[265,0.456422,0.543578,0.67559,0.741765,0.737277,0.741765],[266,0.465122,0.534878,0.681998,0.750492,0.731354,0.750492],[267,0.473832,0.526168,0.688355,0.759218,0.725374,0.759218],[268,0.48255,0.51745,0.694658,0.767945,0.71934,0.767945],[269,0.491274,0.508726,0.700909,0.776672,0.71325,0.776672],[270,0.5,0.5,0.707107,0.785398,0.707107,0.785398],[271,0.508726,0.491274,0.71325,0.794125,0.700909,0.794125],[272,0.51745,0.48255,0.71934,0.802851,0.694658,0.802851],[273,0.526168,0.473832,0.725374,0.811578,0.688355,0.811578],[274,0.534878,0.465122,0.731354,0.820305,0.681998,0.820305],[275,0.543578,0.456422,0.737277,0.829031,0.67559,0.829031],[276,0.552264,0.447736,0.743145,0.837758,0.669131,0.837758],[277,0.560935,0.439065,0.748956,0.846485,0.66262,0.846485],[278,0.569587,0.430413,0.75471,0.855211,0.656059,0.855211],[279,0.578217,0.421783,0.760406,0.863938,0.649448,0.863938],[280,0.586824,0.413176,0.766044,0.872665,0.642788,0.872665],[281,0.595404,0.404596,0.771625,0.881391,0.636078,0.881391],[282,0.603956,0.396044,0.777146,0.890118,0.62932,0.890118],[283,0.612476,0.387524,0.782608,0.898845,0.622515,0.898845],[284,0.620961,0.379039,0.788011,0.907571,0.615661,0.907571],[285,0.62941,0.37059,0.793353,0.916298,0.608761,0.916298],[286,0.637819,0.362181,0.798636,0.925025,0.601815,0.925025],[287,0.646186,0.353814,0.803857,0.933751,0.594823,0.933751],[288,0.654508,0.345492,0.809017,0.942478,0.587785,0.942478],[289,0.662784,0.337216,0.814116,0.951204,0.580703,0.951204],[290,0.67101,0.32899,0.819152,0.959931,0.573576,0.959931],[291,0.679184,0.320816,0.824126,0.968658,0.566406,0.968658],[292,0.687303,0.312697,0.829038,0.977384,0.559193,0.977384],[293,0.695366,0.304634,0.833886,0.986111,0.551937,0.986111],[294,0.703368,0.296632,0.838671,0.994838,0.544639,0.994838],[295,0.711309,0.288691,0.843391,1.003564,0.5373,1.003564],[296,0.719186,0.280814,0.848048,1.012291,0.529919,1.012291],[297,0.726995,0.273005,0.85264,1.021018,0.522499,1.021018],[298,0.734736,0.265264,0.857167,1.029744,0.515038,1.029744],[299,0.742405,0.257595,0.861629,1.038471,0.507538,1.038471],[300,0.75,0.25,0.866025,1.047198,0.5,1.047198],[301,0.757519,0.242481,0.870356,1.055924,0.492424,1.055924],[302,0.76496,0.23504,0.87462,1.064651,0.48481,1.064651],[303,0.77232,0.22768,0.878817,1.073377,0.477159,1.073377],[304,0.779596,0.220404,0.882948,1.082104,0.469472,1.082104],[305,0.786788,0.213212,0.887011,1.090831,0.461749,1.090831],[306,0.793893,0.206107,0.891007,1.099557,0.45399,1.099557],[307,0.800908,0.199092,0.894934,1.108284,0.446198,1.108284],[308,0.807831,0.192169,0.898794,1.117011,0.438371,1.117011],[309,0.81466,0.18534,0.902585,1.125737,0.430511,1.125737],[310,0.821394,0.178606,0.906308,1.134464,0.422618,1.134464],[311,0.82803,0.17197,0.909961,1.143191,0.414693,1.143191],[312,0.834565,0.165435,0.913545,1.151917,0.406737,1.151917],[313,0.840999,0.159001,0.91706,1.160644,0.398749,1.160644],[314,0.847329,0.152671,0.920505,1.169371,0.390731,1.169371],[315,0.853553,0.146447,0.92388,1.178097,0.382683,1.178097],[316,0.85967,0.14033,0.927184,1.186824,0.374607,1.186824],[317,0.865677,0.134323,0.930418,1.195551,0.366501,1.195551],[318,0.871572,0.128428,0.93358,1.204277,0.358368,1.204277],[319,0.877355,0.122645,0.936672,1.213004,0.350207,1.213004],[320,0.883022,0.116978,0.939693,1.22173,0.34202,1.22173],[321,0.888573,0.111427,0.942641,1.230457,0.333807,1.230457],[322,0.894005,0.105995,0.945519,1.239184,0.325568,1.239184],[323,0.899318,0.100682,0.948324,1.24791,0.317305,1.24791],[324,0.904508,0.095492,0.951057,1.256637,0.309017,1.256637],[325,0.909576,0.090424,0.953717,1.265364,0.300706,1.265364],[326,0.914519,0.085481,0.956305,1.27409,0.292372,1.27409],[327,0.919335,0.080665,0.95882,1.282817,0.284015,1.282817],[328,0.924024,0.075976,0.961262,1.291544,0.275637,1.291544],[329,0.928584,0.071416,0.96363,1.30027,0.267238,1.30027],[330,0.933013,0.066987,0.965926,1.308997,0.258819,1.308997],[331,0.93731,0.06269,0.968148,1.317724,0.25038,1.317724],[332,0.941474,0.058526,0.970296,1.32645,0.241922,1.32645],[333,0.945503,0.054497,0.97237,1.335177,0.233445,1.335177],[334,0.949397,0.050603,0.97437,1.343904,0.224951,1.343904],[335,0.953154,0.046846,0.976296,1.35263,0.21644,1.35263],[336,0.956773,0.043227,0.978148,1.361357,0.207912,1.361357],[337,0.960252,0.039748,0.979925,1.370083,0.199368,1.370083],[338,0.963592,0.036408,0.981627,1.37881,0.190809,1.37881],[339,0.96679,0.03321,0.983255,1.387537,0.182236,1.387537],[340,0.969846,0.030154,0.984808,1.396263,0.173648,1.396263],[341,0.972759,0.027241,0.986286,1.40499,0.165048,1.40499],[342,0.975528,0.024472,0.987688,1.413717,0.156434,1.413717],[343,0.978152,0.021848,0.989016,1.422443,0.147809,1.422443],[344,0.980631,0.019369,0.990268,1.43117,0.139173,1.43117],[345,0.982963,0.017037,0.991445,1.439897,0.130526,1.439897],[346,0.985148,0.014852,0.992546,1.448623,0.121869,1.448623],[347,0.987185,0.012815,0.993572,1.45735,0.113203,1.45735],[348,0.989074,0.010926,0.994522,1.466077,0.104528,1.466077],[349,0.990814,0.009186,0.995396,1.474803,0.095846,1.474803],[350,0.992404,0.007596,0.996195,1.48353,0.087156,1.48353],[351,0.993844,0.006156,0.996917,1.492257,0.078459,1.492257],[352,0.995134,0.004866,0.997564,1.500983,0.069756,1.500983],[353,0.996273,0.003727,0.998135,1.50971,0.061049,1.50971],[354,0.997261,0.002739,0.99863,1.518436,0.052336,1.518436],[355,0.998097,0.001903,0.999048,1.527163,0.043619,1.527163],[356,0.998782,0.001218,0.999391,1.53589,0.034899,1.53589],[357,0.999315,0.000685,0.999657,1.544616,0.026177,1.544616],[358,0.999695,0.000305,0.999848,1.553343,0.017452,1.553343],[359,0.999924,7.6e-05,0.999962,1.56207,0.008727,1.56207],[360,1.0,0.0,1.0,1.570796,0.0,1.570796]],"arms":{"A":[0.7071067811865475,0.0],"B":[0.7071067811865475,1.5707963267948966]},"rings":{"4":[[[1,0.0],[0,0.0],[0,0.0],[0,0.0]],[[0.0,0.0],[1.0,1.570796],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[1.0,3.141593],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,-1.570796]],[[1.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[1.0,1.570796],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[1.0,3.141593],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,-1.570796]],[[1.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]]],"6":[[[1,0.0],[0,0.0],[0,0.0],[0,0.0],[0,0.0],[0,0.0]],[[0.0,0.0],[1.0,1.047198],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[1.0,2.094395],[0.0,0.0],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,3.141593],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,-2.094395],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,-1.047198]],[[1.0,-0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[1.0,1.047198],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[1.0,2.094395],[0.0,0.0],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,3.141593],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,-2.094395],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,-1.047198]],[[1.0,-0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]]],"8":[[[1,0.0],[0,0.0],[0,0.0],[0,0.0],[0,0.0],[0,0.0],[0,0.0],[0,0.0]],[[0.0,0.0],[1.0,0.785398],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[1.0,1.570796],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,2.356194],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,3.141593],[0.0,0.0],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,-2.356194],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,-1.570796],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,-0.785398]],[[1.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[1.0,0.785398],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[1.0,1.570796],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,2.356194],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,3.141593],[0.0,0.0],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,-2.356194],[0.0,0.0],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,-1.570796],[0.0,0.0]],[[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[1.0,-0.785398]],[[1.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]]]},"order":[[1,-1.5707963267948966,1.4997597826618576e-32],[1,1.5707963267948966,4.0]],"roots":{"2":{"pts":[[1.0,0.0],[1.0,3.141593]],"sum":0.0},"3":{"pts":[[1.0,0.0],[1.0,2.094395],[1.0,-2.094395]],"sum":0.0},"4":{"pts":[[1.0,0.0],[1.0,1.570796],[1.0,3.141593],[1.0,-1.570796]],"sum":0.0},"5":{"pts":[[1.0,0.0],[1.0,1.256637],[1.0,2.513274],[1.0,-2.513274],[1.0,-1.256637]],"sum":0.0},"6":{"pts":[[1.0,0.0],[1.0,1.047198],[1.0,2.094395],[1.0,3.141593],[1.0,-2.094395],[1.0,-1.047198]],"sum":0.0},"7":{"pts":[[1.0,0.0],[1.0,0.897598],[1.0,1.795196],[1.0,2.692794],[1.0,-2.692794],[1.0,-1.795196],[1.0,-0.897598]],"sum":0.0},"8":{"pts":[[1.0,0.0],[1.0,0.785398],[1.0,1.570796],[1.0,2.356194],[1.0,3.141593],[1.0,-2.356194],[1.0,-1.570796],[1.0,-0.785398]],"sum":0.0},"9":{"pts":[[1.0,0.0],[1.0,0.698132],[1.0,1.396263],[1.0,2.094395],[1.0,2.792527],[1.0,-2.792527],[1.0,-2.094395],[1.0,-1.396263],[1.0,-0.698132]],"sum":0.0},"10":{"pts":[[1.0,0.0],[1.0,0.628319],[1.0,1.256637],[1.0,1.884956],[1.0,2.513274],[1.0,3.141593],[1.0,-2.513274],[1.0,-1.884956],[1.0,-1.256637],[1.0,-0.628319]],"sum":0.0},"11":{"pts":[[1.0,0.0],[1.0,0.571199],[1.0,1.142397],[1.0,1.713596],[1.0,2.284795],[1.0,2.855993],[1.0,-2.855993],[1.0,-2.284795],[1.0,-1.713596],[1.0,-1.142397],[1.0,-0.571199]],"sum":0.0},"12":{"pts":[[1.0,0.0],[1.0,0.523599],[1.0,1.047198],[1.0,1.570796],[1.0,2.094395],[1.0,2.617994],[1.0,3.141593],[1.0,-2.617994],[1.0,-2.094395],[1.0,-1.570796],[1.0,-1.047198],[1.0,-0.523599]],"sum":0.0},"z":{"z":[1.6,1.1],"by_n":{"2":[[1.264911,0.55],[1.264911,-2.591593]],"3":[[1.169607,0.366667],[1.169607,2.461062],[1.169607,-1.727728]],"4":[[1.124683,0.275],[1.124683,1.845796],[1.124683,-2.866593],[1.124683,-1.295796]],"5":[[1.098561,0.22],[1.098561,1.476637],[1.098561,2.733274],[1.098561,-2.293274],[1.098561,-1.036637]],"6":[[1.081484,0.183333],[1.081484,1.230531],[1.081484,2.277728],[1.081484,-2.958259],[1.081484,-1.911062],[1.081484,-0.863864]],"7":[[1.069449,0.157143],[1.069449,1.054741],[1.069449,1.952339],[1.069449,2.849937],[1.069449,-2.535651],[1.069449,-1.638053],[1.069449,-0.740455]],"8":[[1.060511,0.1375],[1.060511,0.922898],[1.060511,1.708296],[1.060511,2.493694],[1.060511,-3.004093],[1.060511,-2.218694],[1.060511,-1.433296],[1.060511,-0.647898]]}}},"spec":{"signal":[1.85,0.771747,-0.171644,-0.351656,-0.532843,-0.305127,-1.15349,-1.320818,0.25,0.967265,1.15349,0.65868,0.032843,0.705209,0.171644,-1.125301,-1.35,-1.125301,0.171644,0.705209,0.032843,0.65868,1.15349,0.967265,0.25,-1.320818,-1.15349,-0.305127,-0.532843,-0.351656,-0.171644,0.771747],"power":[0.0,0.0,0.0,256.0,0.0,0.0,0.0,92.16,0.0,0.0,0.0,0.0,16.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,16.0,0.0,0.0,0.0,0.0,92.16,0.0,0.0,0.0,256.0,0.0,0.0]},"clicks":{"0":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"30":[1,0,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1],"60":[1,0,1,0,1,1,1,0,1,0,0,1,0,0,1,1,0,1,1,0,1,1,1,0,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,0,0,0,1,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,0,0,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,0,1,1,0,1,0,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,0,1,1,0,0,0,1,0,1,1,0,0,1,0,0,1,1,1,1,1,0,0,1,1,1,1,1,1,0,1,1,1,0,0,1,1,1,0,1,1,1,1,0,1,1],"90":[1,0,0,0,1,1,1,0,0,0,0,1,0,0,1,1,0,1,1,0,1,1,0,0,1,0,0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0,0,0,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1,1,1,1,1,0,0,0,0,0,1,1,0,1,0,1,0,0,0,1,0,1,1,0,0,1,1,0,0,0,1,1,0,0,0,1,1,1,1,0,1,1,1,0,1,0,0,0,1,1,0,1,0,1,1,0,1,1,0,1,1,1,1,0,0,0,1,1,1,0,0,1,1,0,0,0,1,1,0,0,1,0,1,0,0,1,1,0,0,1,1,0,1,0,0,0,1,0,0,0,1,0,1,1,0,0,1,0,0,1,1,0,1,1,0,0,0,0,0,1,1,1,0,0,0,1,0,0,0,0,0,0,1,0,1,1,0,1,1],"120":[0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,1,1,0,0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1,0,0,0,1,0,1,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,1,1,0,0,0,0,1,0,1,0,0,0,0,1,1,1,0,0,1,1,0,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,0,1,1,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1,0,1,0,0,1,1],"150":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],"180":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}};
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const mz = document.getElementById('mzi'), mx = mz.getContext('2d');
+const slider = document.getElementById('phase');
+function ownNum(id, dflt){const v=parseFloat(document.getElementById(id).value); return Number.isFinite(v)?v:dflt}
+const MZ={phi:120,a:.5,b:.5};
+function mzCurie(){return Number.isInteger(MZ.phi)&&MZ.phi>=0&&MZ.phi<=360&&MZ.a===.5&&MZ.b===.5}
+function polar(r,t){return [r*Math.cos(t), r*Math.sin(t)]}
+function arrow(ctx,x0,y0,x1,y1,col,w){
+  ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();
+  if(Math.hypot(x1-x0,y1-y0)<3)return;
+  const a=Math.atan2(y1-y0,x1-x0),h=9;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1-h*Math.cos(a-.4),y1-h*Math.sin(a-.4));ctx.lineTo(x1-h*Math.cos(a+.4),y1-h*Math.sin(a+.4));ctx.closePath();ctx.fill();
+}
+function drawMZI(deg){
+  MZ.phi=deg; const phi=deg*Math.PI/180; let I1, I2;
+  if(mzCurie()){const f=DATA.mzi[deg]; I1=f[1]; I2=f[2];}
+  else {const A=MZ.a, B=MZ.b; I1=A*A+B*B+2*A*B*Math.cos(phi); I2=A*A+B*B-2*A*B*Math.cos(phi);}
+  const box=document.getElementById('mz-phi'); if(box&&document.activeElement!==box) box.value=+deg.toFixed(4);
+  const W=mz.width,H=mz.height, ink=css('--ink'), mut=css('--muted'), rule=css('--rule'), b1=css('--beam'), b2=css('--beam2'), pan=css('--panel');
+  mx.clearRect(0,0,W,H); mx.font='15px "JetBrains Mono", monospace'; mx.textAlign='center';
+  const S=[60,180], BS1=[200,180], MA=[200,60], MB=[520,180], BS2=[520,60], D1=[650,60], D2=[520,300];
+  mx.lineWidth=5; mx.lineCap='round';
+  const beam=(p,q,a,col)=>{mx.globalAlpha=a;mx.strokeStyle=col;mx.beginPath();mx.moveTo(p[0],p[1]);mx.lineTo(q[0],q[1]);mx.stroke();mx.globalAlpha=1};
+  beam(S,BS1,.9,b1); beam(BS1,MA,.55,b1); beam(MA,BS2,.55,b1); beam(BS1,MB,.55,b1); beam(MB,BS2,.55,b1);
+  beam(BS2,D1,Math.min(1,.15+.85*I1),b1); beam(BS2,[D2[0],D2[1]-18],Math.min(1,.15+.85*I2),b2);
+  const plate=(p,label,below)=>{mx.save();mx.translate(p[0],p[1]);mx.rotate(-Math.PI/4);mx.fillStyle=rule;mx.fillRect(-26,-4,52,8);mx.restore();mx.fillStyle=mut;mx.fillText(label,p[0],p[1]+(below?34:-22))};
+  plate(BS1,'split',true); plate(BS2,'recombine',false); plate(MA,'mirror',false); plate(MB,'mirror',true);
+  mx.fillStyle=b2; mx.globalAlpha=.2+.6*(deg/360); mx.fillRect(345,160,40,40); mx.globalAlpha=1;
+  mx.fillStyle=ink; mx.fillText('φ = '+deg+'°',365,230);
+  mx.fillStyle=ink; mx.beginPath(); mx.arc(S[0],S[1],10,0,7); mx.fill(); mx.fillStyle=mut; mx.fillText('source',S[0],S[1]+34);
+  const det=(p,I,col,name,below)=>{const g=mx.createRadialGradient(p[0],p[1],2,p[0],p[1],46);g.addColorStop(0,col);g.addColorStop(1,pan);
+    mx.globalAlpha=Math.min(1,Math.max(.06,I));mx.fillStyle=g;mx.beginPath();mx.arc(p[0],p[1],46,0,7);mx.fill();mx.globalAlpha=1;
+    mx.strokeStyle=col;mx.lineWidth=2;mx.beginPath();mx.arc(p[0],p[1],16,0,7);mx.stroke();mx.fillStyle=ink;mx.fillText(name,p[0],p[1]+(below?40:-26))};
+  det(D1,I1,b1,'D1',false); det(D2,I2,b2,'D2',true);
+  const panel=(ox,oy,c1,c2,col,label)=>{
+    const s=70; mx.strokeStyle=rule; mx.lineWidth=1; mx.beginPath(); mx.arc(ox,oy,s,0,7); mx.stroke();
+    mx.beginPath();mx.moveTo(ox-s,oy);mx.lineTo(ox+s,oy);mx.moveTo(ox,oy-s);mx.lineTo(ox,oy+s);mx.stroke();
+    const a=polar(c1[0],c1[1]), b=polar(c2[0],c2[1]);
+    const p1=[ox+a[0]*s, oy-a[1]*s], p2=[p1[0]+b[0]*s, p1[1]-b[1]*s];
+    arrow(mx,ox,oy,p1[0],p1[1],mut,2); arrow(mx,p1[0],p1[1],p2[0],p2[1],mut,2); arrow(mx,ox,oy,p2[0],p2[1],col,4);
+    mx.fillStyle=ink; mx.textAlign='left'; mx.fillText(label,ox-s,oy-s-10); mx.textAlign='center';
+  };
+  panel(880,100,[MZ.a,Math.PI/2],[MZ.b,Math.PI/2+phi],b1,'D1 arrows');
+  panel(880,270,[MZ.a,0],[MZ.b,phi+Math.PI],b2,'D2 arrows');
+  document.getElementById('r1').textContent=I1.toFixed(3);
+  document.getElementById('r2').textContent=I2.toFixed(3);
+  document.getElementById('rt').textContent=(I1+I2).toFixed(3);
+  document.getElementById('phaseval').textContent=(+deg.toFixed(2))+'°';
+  wmMZI(deg);
+}
+slider.addEventListener('input',()=>drawMZI(+slider.value));
+document.getElementById('mz-phi').addEventListener('input',()=>{const v=ownNum('mz-phi',MZ.phi); slider.value=((Math.round(v)%360)+360)%360; drawMZI(v)});
+['mz-a','mz-b'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{MZ.a=Math.min(1,Math.max(0,ownNum('mz-a',.5))); MZ.b=Math.min(1,Math.max(0,ownNum('mz-b',.5))); drawMZI(MZ.phi)}));
+let sweeping=null;
+document.getElementById('sweep').addEventListener('click',e=>{
+  if(sweeping){cancelAnimationFrame(sweeping);sweeping=null;e.target.textContent='Sweep';return}
+  if(reduce){slider.value=(+slider.value+45)%361;drawMZI(+slider.value);return}
+  e.target.textContent='Stop';
+  const tick=()=>{slider.value=(+slider.value+1)%361;drawMZI(+slider.value);sweeping=requestAnimationFrame(tick)};tick();
+});
+
+const rc=document.getElementById('ring'), rx=rc.getContext('2d'); let rn='6', rs=0, rtimer=null;
+const RG={n:6, turn:null, r0:1, t0:0};
+function ringCurie(){return ['4','6','8'].includes(String(RG.n))&&RG.turn===null&&RG.r0===1&&RG.t0===0}
+function turnRad(){return RG.turn===null?2*Math.PI/RG.n:RG.turn*Math.PI/180}
+function ringLen(){return ringCurie()?DATA.rings[String(RG.n)].length:4*RG.n+1}
+function wrapA(t){return Math.atan2(Math.sin(t),Math.cos(t))}
+function ringFrame(){
+  if(ringCurie()){const fr=DATA.rings[String(RG.n)]; return fr[rs%fr.length]}
+  const f=[]; for(let i=0;i<RG.n;i++) f.push([0,0]);
+  f[rs%RG.n]=[RG.r0, wrapA(RG.t0*Math.PI/180+rs*turnRad())]; return f;
+}
+function drawRing(){
+  const f=ringFrame(), n=f.length, W=rc.width,H=rc.height, cx=W/2, cy=H/2, R=150;
+  const ink=css('--ink'), mut=css('--muted'), rule=css('--rule'), b1=css('--beam'), pan=css('--panel');
+  rx.clearRect(0,0,W,H); rx.strokeStyle=rule; rx.lineWidth=2; rx.beginPath(); rx.arc(cx,cy,R,0,7); rx.stroke();
+  rx.font='14px "JetBrains Mono", monospace'; rx.textAlign='center';
+  for(let i=0;i<n;i++){
+    const a=-Math.PI/2+i*2*Math.PI/n, x=cx+R*Math.cos(a), y=cy+R*Math.sin(a), r=f[i][0], t=f[i][1], I=r*r;
+    const g=rx.createRadialGradient(x,y,2,x,y,44); g.addColorStop(0,b1); g.addColorStop(1,pan);
+    rx.globalAlpha=Math.min(1,Math.max(.05,I)); rx.fillStyle=g; rx.beginPath(); rx.arc(x,y,44,0,7); rx.fill(); rx.globalAlpha=1;
+    rx.fillStyle=pan; rx.strokeStyle=I>.5?b1:rule; rx.lineWidth=2; rx.beginPath(); rx.arc(x,y,20,0,7); rx.fill(); rx.stroke();
+    if(I>1e-6){rx.strokeStyle=ink; rx.lineWidth=3; rx.beginPath(); rx.moveTo(x,y); rx.lineTo(x+16*Math.cos(-t),y+16*Math.sin(-t)); rx.stroke();}
+    rx.fillStyle=mut; rx.fillText(String(i), cx+(R-46)*Math.cos(a), cy+(R-46)*Math.sin(a)+5);
+  }
+  const live=f.findIndex(v=>v[0]>1e-9);
+  rx.fillStyle=ink; rx.fillText(live>=0?('node '+live+': '+f[live][0].toFixed(3)+'∠'+f[live][1].toFixed(3)):'', cx, cy+5);
+  document.getElementById('stepval').textContent='step '+rs;
+  wmRing();
+}
+document.getElementById('nodes').addEventListener('change',e=>{rn=e.target.value;RG.n=+rn;document.getElementById('rg-n').value=rn;rs=0;drawRing()});
+['rg-n','rg-turn','rg-r','rg-t'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{
+  RG.n=Math.min(24,Math.max(2,Math.round(ownNum('rg-n',6))));
+  const tv=document.getElementById('rg-turn').value.trim(); RG.turn=tv===''||!Number.isFinite(parseFloat(tv))?null:parseFloat(tv);
+  RG.r0=Math.max(0,ownNum('rg-r',1)); RG.t0=ownNum('rg-t',0);
+  if(['4','6','8'].includes(String(RG.n))){rn=String(RG.n); document.getElementById('nodes').value=rn}
+  rs=0; drawRing()}));
+document.getElementById('step').addEventListener('click',()=>{rs=(rs+1)%ringLen();drawRing()});
+document.getElementById('play').addEventListener('click',e=>{
+  if(rtimer){clearInterval(rtimer);rtimer=null;e.target.textContent='Play';return}
+  e.target.textContent='Pause'; rtimer=setInterval(()=>{rs=(rs+1)%ringLen();drawRing()}, reduce?1200:650);
+});
+
+const fmt=t=>{const k=t/(Math.PI/2), m={'0':'0','1':'π/2','-1':'−π/2','2':'π','-2':'−π'};return Math.abs(k-Math.round(k))<1e-9&&m[Math.round(k)]?m[Math.round(k)]:t.toFixed(3)};
+const OD={r:1,t:0,a:90,wr:1,wt:90};
+function odCurie(){return OD.r===1&&OD.t===0&&OD.a===90&&OD.wr===1&&OD.wt===90}
+function odResults(){
+  const d=Math.PI/180, rf=[OD.r, wrapA(-(OD.t+OD.a)*d)], fr=[OD.r, wrapA((-OD.t+OD.a)*d)], w=[OD.wr*Math.cos(OD.wt*d), OD.wr*Math.sin(OD.wt*d)];
+  const light=v=>{const x=v[0]*Math.cos(v[1])+w[0], y=v[0]*Math.sin(v[1])+w[1]; return x*x+y*y};
+  if(odCurie()) return {rf:DATA.order[0], fr:DATA.order[1]};
+  return {rf:[rf[0],rf[1],light(rf)], fr:[fr[0],fr[1],light(fr)]};
+}
+function renderOrder(){
+  const R=odResults();
+  document.getElementById('order').innerHTML=[['flip, then rotate',R.fr],['rotate, then flip',R.rf]]
+    .map(([n,v])=>'<div class="line"><span>'+n+'</span><span>'+v[0].toFixed(3)+'∠'+(odCurie()?fmt(v[1]):WM.deg(v[1]))+'</span><em>light '+(v[2]<1e-12?0:v[2]).toFixed(3)+'</em></div>').join('');
+  wmOrder();
+}
+['od-r','od-t','od-a','od-wr','od-wt'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{
+  OD.r=ownNum('od-r',1); OD.t=ownNum('od-t',0); OD.a=ownNum('od-a',90); OD.wr=ownNum('od-wr',1); OD.wt=ownNum('od-wt',90); renderOrder()}));
+
+const roc=document.getElementById('roots'), ro=roc.getContext('2d');
+const rootn=document.getElementById('rootn'), rootof=document.getElementById('rootof');
+const RT={r:2,t:45};
+function rootsOwn(n){const out=[], len=Math.pow(RT.r,1/n); for(let k=0;k<n;k++) out.push([len, wrapA((RT.t*Math.PI/180+2*Math.PI*k)/n)]); return out}
+['rt-r','rt-t'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{RT.r=Math.max(0.01,ownNum('rt-r',2)); RT.t=ownNum('rt-t',45); rootof.value='own'; rootn.max=12; drawRoots()}));
+function drawRoots(){
+  const n=rootn.value, W=roc.width,H=roc.height,cx=W/2,cy=H/2,ink=css('--ink'),mut=css('--muted'),rule=css('--rule'),b1=css('--beam'),b2=css('--beam2');
+  ro.clearRect(0,0,W,H); ro.font='14px "JetBrains Mono", monospace'; ro.textAlign='center';
+  const pts=rootof.value==='own'?rootsOwn(+n):((rootof.value==='one'||!DATA.roots.z.by_n[n])?DATA.roots[n].pts:DATA.roots.z.by_n[n]);
+  const scale=rootof.value==='one'?150:150/Math.max(...pts.map(p=>p[0]));
+  ro.strokeStyle=rule; ro.lineWidth=1; ro.beginPath(); ro.arc(cx,cy,scale*pts[0][0],0,7); ro.stroke();
+  ro.beginPath(); ro.moveTo(cx-170,cy); ro.lineTo(cx+170,cy); ro.moveTo(cx,cy-170); ro.lineTo(cx,cy+170); ro.stroke();
+  pts.forEach((p,k)=>{const x=cx+scale*p[0]*Math.cos(p[1]), y=cy-scale*p[0]*Math.sin(p[1]);
+    ro.strokeStyle=b1; ro.lineWidth=2; ro.beginPath(); ro.moveTo(cx,cy); ro.lineTo(x,y); ro.stroke();
+    ro.fillStyle=b1; ro.beginPath(); ro.arc(x,y,7,0,7); ro.fill(); ro.fillStyle=mut; ro.fillText(String(k), cx+(scale*p[0]+22)*Math.cos(p[1]), cy-(scale*p[0]+22)*Math.sin(p[1])+5);});
+  document.getElementById('rootnval').textContent=n;
+  const note=document.getElementById('rootnote');
+  if(rootof.value==='one'){ro.fillStyle=ink; ro.fillText('sum of all '+n+' roots: '+DATA.roots[n].sum.toFixed(3), cx, H-12);
+    note.textContent='To the gnomes the nth root is n things, spaced evenly round the circle. Interfere all the roots of 1 together and they cancel to nothing.';}
+  else if(rootof.value==='own'){ro.fillStyle=ink; ro.fillText('each one raised to the '+n+'th gives '+RT.r+'∠'+RT.t+'°', cx, H-12);
+    note.textContent='The '+n+' roots of your number. Same rule: the nth root of the length, and the angle divided by n, then '+(360/n).toFixed(1)+'° apart.';}
+  else {ro.fillStyle=ink; ro.fillText('each one raised to the '+n+'th gives 1.6∠1.1', cx, H-12);
+    note.textContent='The '+n+' roots of 1.6∠1.1. Different lengths and angles from the roots of 1, but the same even spacing, '+(360/n).toFixed(1)+'° apart.';}
+  wmRoots();
+}
+rootn.addEventListener('input',drawRoots); rootof.addEventListener('change',()=>{if(+rootn.value>8&&rootof.value==='z'){rootn.value=8} rootn.max=rootof.value==='z'?8:12; drawRoots()});
+
+const spc=document.getElementById('spec'), sp=spc.getContext('2d');
+const SPEC_DEFAULT=[[3,1],[7,0.6],[12,0.25]], SPEC_N=DATA.spec.signal.length;
+let specTones=SPEC_DEFAULT.map(t=>t.slice());
+function specIsDefault(){return specTones.every((t,i)=>t[0]===SPEC_DEFAULT[i][0]&&Math.abs(t[1]-SPEC_DEFAULT[i][1])<1e-9)}
+function specSignal(){
+  if(specIsDefault()) return DATA.spec.signal;
+  const out=[]; for(let j=0;j<SPEC_N;j++){let v=0; for(const [k,a] of specTones) v+=a*Math.cos(2*Math.PI*k*j/SPEC_N); out.push(v)} return out;
+}
+function specPower(sig){
+  if(specIsDefault()) return DATA.spec.power;
+  const pw=[]; for(let k=0;k<SPEC_N;k++){let re=0,im=0; for(let j=0;j<SPEC_N;j++){const t=-2*Math.PI*j*k/SPEC_N; re+=sig[j]*Math.cos(t); im+=sig[j]*Math.sin(t)} pw.push(re*re+im*im)} return pw;
+}
+function specControls(){
+  const box=document.getElementById('specctl'); box.innerHTML='';
+  specTones.forEach((t,i)=>{
+    const lab=document.createElement('label'); lab.textContent='tone '+(i+1); lab.htmlFor='tf'+i;
+    const sel=document.createElement('select'); sel.id='tf'+i;
+    for(let k=1;k<SPEC_N/2;k++){const o=document.createElement('option'); o.value=k; o.textContent=k+' cycles'; if(k===t[0]) o.selected=true; sel.appendChild(o)}
+    const rng=document.createElement('input'); rng.type='range'; rng.min=0; rng.max=1; rng.step=0.05; rng.value=t[1]; rng.setAttribute('aria-label','tone '+(i+1)+' loudness');
+    const val=document.createElement('input'); val.type='number'; val.step='0.05'; val.min='0'; val.value=t[1]; val.setAttribute('aria-label','tone '+(i+1)+' loudness, typed'); val.style.width='4.5em';
+    sel.onchange=()=>{specTones[i][0]=+sel.value; drawSpec()};
+    rng.oninput=()=>{specTones[i][1]=+rng.value; val.value=rng.value; drawSpec()};
+    val.oninput=()=>{const v=parseFloat(val.value); if(Number.isFinite(v)&&v>=0){specTones[i][1]=v; rng.value=Math.min(1,v); drawSpec()}};
+    box.append(lab,sel,rng,val);
+  });
+}
+document.getElementById('specreset').addEventListener('click',()=>{specTones=SPEC_DEFAULT.map(t=>t.slice()); specControls(); drawSpec()});
+specControls();
+function drawSpec(){
+  const W=spc.width,H=spc.height,ink=css('--ink'),mut=css('--muted'),rule=css('--rule'),b1=css('--beam'),b2=css('--beam2');
+  const sig=specSignal(), pw=specPower(sig), N=sig.length, L=30, Rr=W-12, w=(Rr-L)/N;
+  document.getElementById('specsrc').textContent=specIsDefault()?'Curie\u2019s own run':'computed in your browser';
+  sp.clearRect(0,0,W,H); sp.font='12px "JetBrains Mono", monospace'; sp.textAlign='center';
+  const top=20, mid=120, amp=Math.max(1e-9,...sig.map(Math.abs));
+  sp.strokeStyle=rule; sp.lineWidth=1; sp.beginPath(); sp.moveTo(L,mid); sp.lineTo(Rr,mid); sp.stroke();
+  sp.strokeStyle=b2; sp.lineWidth=2; sp.beginPath(); sig.forEach((v,j)=>{const x=L+(j+.5)*w, y=mid-v/amp*80; j?sp.lineTo(x,y):sp.moveTo(x,y)}); sp.stroke();
+  sig.forEach((v,j)=>{sp.fillStyle=b2; sp.beginPath(); sp.arc(L+(j+.5)*w, mid-v/amp*80, 2.5,0,7); sp.fill()});
+  sp.fillStyle=mut; sp.textAlign='left'; sp.fillText('signal, 32 samples',L,top-6); sp.textAlign='center';
+  const base=H-34, maxp=Math.max(1e-9,...pw), hmax=150;
+  sp.strokeStyle=rule; sp.beginPath(); sp.moveTo(L,base); sp.lineTo(Rr,base); sp.stroke();
+  pw.forEach((p,k)=>{const h=p/maxp*hmax; sp.fillStyle=p>1e-6?b1:rule; sp.fillRect(L+k*w+1,base-h,w-2,Math.max(1,h)); if(p>1e-6){sp.fillStyle=ink; sp.fillText(String(k),L+(k+.5)*w,base+16)}});
+  sp.fillStyle=mut; sp.textAlign='left'; sp.fillText('spectrum: intensity per frequency bin',L,base-hmax-10); sp.textAlign='center';
+  wmSpec();
+}
+
+const clc=document.getElementById('clicks'), cl=clc.getContext('2d'); let fireT=null, shown=0;
+const CK={phi:90, seed:null};
+function ckCurie(){return [0,30,60,90,120,150,180].includes(CK.phi)&&CK.seed===null}
+function clickSeq(){
+  if(ckCurie()) return DATA.clicks[String(CK.phi)];
+  let a=(CK.seed===null?1:CK.seed)>>>0; const rnd=()=>{a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296};
+  const p=Math.cos(CK.phi*Math.PI/360)**2, out=[]; for(let i=0;i<200;i++) out.push(rnd()<p?1:2); return out;
+}
+function ckReset(){if(fireT){clearInterval(fireT);fireT=null;document.getElementById('fire').textContent='Fire 200 photons'} shown=0}
+['ck-phi','ck-seed'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{
+  CK.phi=ownNum('ck-phi',90); const sv=document.getElementById('ck-seed').value.trim(); CK.seed=sv===''||!Number.isFinite(parseFloat(sv))?null:Math.round(parseFloat(sv));
+  const sel=document.getElementById('clickphase'); if([...sel.options].some(o=>+o.value===CK.phi)) sel.value=String(CK.phi);
+  ckReset(); drawClicks()}));
+function drawClicks(){
+  const deg=CK.phi, seq=clickSeq(), W=clc.width,H=clc.height,ink=css('--ink'),mut=css('--muted'),rule=css('--rule'),b1=css('--beam'),b2=css('--beam2');
+  cl.clearRect(0,0,W,H); const cw=(W-20)/100;
+  let n1=0,n2=0;
+  for(let i=0;i<200;i++){const row=i<100?0:1, col=i%100, x=10+col*cw, y=30+row*60;
+    if(i<shown){const port=seq[i]; port===1?n1++:n2++; cl.fillStyle=port===1?b1:b2; cl.fillRect(x+1,y+(port===1?0:26),cw-2,22);}
+    else {cl.fillStyle=rule; cl.fillRect(x+cw/2-1,y+24,2,2);} }
+  const phi=deg*Math.PI/180, p1=Math.cos(phi/2)**2;
+  cl.font='13px "JetBrains Mono", monospace'; cl.fillStyle=mut; cl.textAlign='left';
+  cl.fillText('upper marks: detector 1 · lower marks: detector 2 · theory for detector 1: '+(p1*100).toFixed(1)+'%',10,H-12);
+  document.getElementById('clickcount').textContent='detector 1: '+n1+' · detector 2: '+n2+(shown?' ('+(n1/shown*100).toFixed(1)+'% vs '+(p1*100).toFixed(1)+'%)':'');
+  wmClicks();
+}
+document.getElementById('clickphase').addEventListener('change',e=>{CK.phi=+e.target.value; document.getElementById('ck-phi').value=CK.phi; ckReset(); drawClicks()});
+document.getElementById('fire').addEventListener('click',e=>{
+  if(fireT){clearInterval(fireT);fireT=null;e.target.textContent='Fire 200 photons';return}
+  if(shown>=200)shown=0;
+  if(reduce){shown=200;drawClicks();return}
+  e.target.textContent='Stop'; fireT=setInterval(()=>{shown=Math.min(200,shown+2);drawClicks(); if(shown>=200){clearInterval(fireT);fireT=null;e.target.textContent='Fire again'}},30);
+});
+
+/* ---- The maths behind each wave, written out live and checked against Curie's recorded numbers ---- */
+const WM = {
+  n: x => { const v = Math.abs(x) < 5e-10 ? 0 : x; return (v < 0 ? '−' : '') + Math.abs(v).toFixed(3); },
+  deg: t => { let d = t * 180 / Math.PI; d = ((d % 360) + 540) % 360 - 180; if (Math.abs(d + 180) < 1e-6) d = 180; return WM.n(d).replace(/\.000$/, '') + '°'; },
+  c: (r, t) => [r * Math.cos(t), r * Math.sin(t)],
+  add: (a, b) => [a[0] + b[0], a[1] + b[1]],
+  abs2: a => a[0] * a[0] + a[1] * a[1],
+  z: a => WM.n(a[0]) + (a[1] < -5e-10 ? ' − ' : ' + ') + WM.n(Math.abs(a[1])) + 'i',
+  esc: s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;'),
+  box(id, title, lines, ok, okText) {
+    const el = document.getElementById(id); if (!el) return;
+    el.innerHTML = '<p class="mq-title">' + title + '</p><div class="mq-lines">' +
+      lines.map(L => '<div class="mq-line"><code>' + WM.esc(L) + '</code></div>').join('') + '</div>' +
+      '<p class="mq-ok">' + (ok ? okText : '<span class="bad">Check failed: ' + okText + '</span>') + '</p>';
+  },
+};
+function wmMZI(deg) {
+  const phi = deg * Math.PI / 180, A = MZ.a, B = MZ.b, cur = mzCurie();
+  const a1 = WM.c(A, Math.PI / 2), b1 = WM.c(B, Math.PI / 2 + phi), s1 = WM.add(a1, b1);
+  const a2 = WM.c(A, 0), b2 = WM.c(B, phi + Math.PI), s2 = WM.add(a2, b2);
+  const I1 = WM.abs2(s1), I2 = WM.abs2(s2), c = Math.cos(phi);
+  const F1 = A * A + B * B + 2 * A * B * c, F2 = A * A + B * B - 2 * A * B * c;
+  let gap = Math.max(Math.abs(I1 - F1), Math.abs(I2 - F2));
+  if (cur) { const f = DATA.mzi[deg]; gap = Math.max(gap, Math.abs(I1 - f[1]), Math.abs(I2 - f[2])); }
+  WM.box('wm-mzi', 'The maths at \u03c6 = ' + (+deg.toFixed(4)) + '\u00b0', [
+    'Path 1 carries ' + WM.n(A) + ', path 2 carries ' + WM.n(B) + '. The splitter turns one path by 90\u00b0 and the plate adds \u03c6.',
+    'to D1:  ' + WM.n(A) + '\u222090\u00b0 + ' + WM.n(B) + '\u2220(90\u00b0 + \u03c6)',
+    '      = (' + WM.z(a1) + ') + (' + WM.z(b1) + ')  =  ' + WM.z(s1),
+    'light at D1 = |sum|\u00b2 = (' + WM.n(s1[0]) + ')\u00b2 + (' + WM.n(s1[1]) + ')\u00b2 = ' + WM.n(I1),
+    'to D2:  ' + WM.n(A) + '\u22200\u00b0 + ' + WM.n(B) + '\u2220(\u03c6 + 180\u00b0)  =  ' + WM.z(s2) + '   light = ' + WM.n(I2),
+    'the formula:  D1 = a\u00b2 + b\u00b2 + 2ab\u00b7cos\u03c6 = ' + WM.n(F1) + '   D2 = a\u00b2 + b\u00b2 \u2212 2ab\u00b7cos\u03c6 = ' + WM.n(F2),
+    (A === .5 && B === .5) ? 'with equal halves that is cos\u00b2(\u03c6/2) = ' + WM.n(Math.cos(phi / 2) ** 2) + ' and sin\u00b2(\u03c6/2) = ' + WM.n(Math.sin(phi / 2) ** 2)
+      : 'unequal paths can never cancel completely: the smallest D1 can be is (a \u2212 b)\u00b2 = ' + WM.n((A - B) ** 2),
+    'total = ' + WM.n(I1) + ' + ' + WM.n(I2) + ' = ' + WM.n(I1 + I2) + ' = 2(a\u00b2 + b\u00b2): light is moved between detectors, never lost',
+  ], gap < 1e-4, cur
+    ? 'Check: the arrow sums, the formula and Curie\u2019s recorded intensities <b>agree</b> (largest difference ' + gap.toExponential(1) + ').'
+    : 'Check: the arrow sums and the formula <b>agree</b> (largest difference ' + gap.toExponential(1) + '). Computed here; Curie recorded the equal-halves case at whole degrees.');
+}
+function wmRing() {
+  const f = ringFrame(), n = f.length, turn = turnRad(), cur = ringCurie();
+  const live = f.findIndex(v => v[0] > 1e-9), r0 = RG.r0, t0 = RG.t0 * Math.PI / 180, want = t0 + rs * turn;
+  let z = WM.c(r0, t0); const h = WM.c(1, turn);
+  for (let i = 0; i < rs; i++) z = [z[0] * h[0] - z[1] * h[1], z[0] * h[1] + z[1] * h[0]];
+  const got = live >= 0 ? WM.c(f[live][0], f[live][1]) : [0, 0];
+  const gap = Math.hypot(got[0] - z[0], got[1] - z[1]);
+  const lap = wrapA(n * turn), laps = (() => { for (let m = 1; m <= 360; m++) if (Math.abs(wrapA(m * n * turn)) < 1e-9) return m; return 0; })();
+  WM.box('wm-ring', 'The maths at step ' + rs, [
+    'Each hop moves the pulse one node on and multiplies it by 1\u2220' + WM.deg(turn) + '.',
+    'start:  ' + WM.n(r0) + '\u2220' + WM.deg(t0) + ' at node 0',
+    'after ' + rs + ' hop' + (rs === 1 ? '' : 's') + ':  ' + WM.n(r0) + '\u2220' + WM.deg(t0) + ' \u00d7 (1\u2220' + WM.deg(turn) + ')^' + rs + ' = ' + WM.n(r0) + '\u2220(' + WM.deg(t0) + ' + ' + rs + ' \u00d7 ' + WM.deg(turn) + ') = ' + WM.n(r0) + '\u2220' + WM.deg(want) + ', at node ' + (rs % n),
+    'lengths multiply (\u00d7 1 each hop), so the pulse never fades; only its angle turns.',
+    Math.abs(lap) < 1e-9 ? 'one lap of ' + n + ' hops turns it by ' + n + ' \u00d7 ' + WM.deg(turn) + ', a whole number of turns: it comes home exactly.'
+      : 'one lap of ' + n + ' hops turns it by ' + WM.deg(lap) + ', so it reaches node 0 again NOT home. ' + (laps ? 'It is home after ' + laps + ' laps (' + laps * n + ' hops).' : 'It never comes exactly home within 360 laps.'),
+  ], gap < 1e-6, cur
+    ? 'Check: hop-by-hop multiplication and Curie\u2019s node ' + live + ' (' + WM.n(f[live][0]) + '\u2220' + WM.deg(f[live][1]) + ') <b>agree</b>.'
+    : 'Check: multiplying hop by hop and the one-line formula <b>agree</b> (difference ' + gap.toExponential(1) + '). Computed here.');
+}
+function wmOrder() {
+  const R = odResults(), d = Math.PI / 180, cur = odCurie();
+  const z = WM.c(OD.r, OD.t * d), rot = WM.c(1, OD.a * d), w = WM.c(OD.wr, OD.wt * d);
+  const mul = (p, q) => [p[0] * q[0] - p[1] * q[1], p[0] * q[1] + p[1] * q[0]], conj = p => [p[0], -p[1]];
+  const rf = conj(mul(z, rot)), fr = mul(conj(z), rot);
+  const Lrf = WM.abs2(WM.add(rf, w)), Lfr = WM.abs2(WM.add(fr, w));
+  const gap = Math.max(Math.abs(Lrf - R.rf[2]), Math.abs(Lfr - R.fr[2]));
+  WM.box('wm-order', 'The maths', [
+    'rotate, then flip:  ' + WM.n(OD.r) + '\u2220' + WM.deg(OD.t * d) + ' \u2192 rotate \u2192 \u2220' + WM.deg((OD.t + OD.a) * d) + ' \u2192 flip \u2192 \u2220' + WM.deg(-(OD.t + OD.a) * d),
+    '   = ' + WM.z(rf) + ';  + (' + WM.z(w) + ') = ' + WM.z(WM.add(rf, w)) + '   light = ' + WM.n(Lrf),
+    'flip, then rotate:  ' + WM.n(OD.r) + '\u2220' + WM.deg(OD.t * d) + ' \u2192 flip \u2192 \u2220' + WM.deg(-OD.t * d) + ' \u2192 rotate \u2192 \u2220' + WM.deg((OD.a - OD.t) * d),
+    '   = ' + WM.z(fr) + ';  + (' + WM.z(w) + ') = ' + WM.z(WM.add(fr, w)) + '   light = ' + WM.n(Lfr),
+    'the two orders end at angles \u2212(\u03b8 + \u03b1) and \u03b1 \u2212 \u03b8. They only match when \u03b1 is 0\u00b0 or 180\u00b0' + (Math.abs(wrapA(2 * OD.a * d)) < 1e-9 ? ', which yours is: so here order does NOT matter.' : '; yours is ' + WM.deg(OD.a * d) + ', so order matters.'),
+  ], gap < 1e-9, cur
+    ? 'Check: angle arithmetic, x + yi arithmetic and Curie\u2019s results <b>agree</b>.'
+    : 'Check: angle arithmetic and x + yi arithmetic <b>agree</b> (difference ' + gap.toExponential(1) + '). Computed here.');
+}
+function wmRoots() {
+  const n = +rootn.value, mode = rootof.value === 'own' ? 'own' : (rootof.value === 'one' || !DATA.roots.z.by_n[n] ? 'one' : 'z');
+  const r0 = mode === 'own' ? RT.r : mode === 'one' ? 1 : 1.6, t0 = mode === 'own' ? RT.t * Math.PI / 180 : mode === 'one' ? 0 : 1.1;
+  const pts = mode === 'own' ? rootsOwn(n) : mode === 'one' ? DATA.roots[n].pts : DATA.roots.z.by_n[n];
+  const len = Math.pow(r0, 1 / n), target = WM.c(r0, t0); let gap = 0, gapC = 0; const lines = [];
+  lines.push('the kth root of ' + WM.n(r0) + '\u2220' + WM.deg(t0) + ':  length ' + WM.n(r0) + '^(1/' + n + ') = ' + WM.n(len) + ',  angle (' + WM.deg(t0) + ' + 360\u00b0\u00b7k) / ' + n);
+  let sum = [0, 0];
+  for (let k = 0; k < n; k++) {
+    const t = (t0 + 2 * Math.PI * k) / n, p = WM.c(len, t); sum = WM.add(sum, p);
+    const q = WM.c(pts[k][0], pts[k][1]); gapC = Math.max(gapC, Math.hypot(p[0] - q[0], p[1] - q[1]));
+    let pw = [1, 0]; for (let i = 0; i < n; i++) pw = [pw[0] * q[0] - pw[1] * q[1], pw[0] * q[1] + pw[1] * q[0]];
+    gap = Math.max(gap, Math.hypot(pw[0] - target[0], pw[1] - target[1]) / Math.max(1, r0));
+    if (k < 3) lines.push('k = ' + k + ':  ' + WM.n(len) + '\u2220' + WM.deg(t) + '  =  ' + WM.z(p));
+  }
+  if (n > 3) lines.push('\u2026 and ' + (n - 3) + ' more, each ' + WM.deg(2 * Math.PI / n) + ' further round');
+  lines.push('check: each root multiplied by itself ' + n + ' times, in x + yi arithmetic, lands back on ' + WM.z(target));
+  lines.push('sum of all ' + n + ' roots = ' + WM.z(sum) + ': turning the set by ' + WM.deg(2 * Math.PI / n) + ' leaves it unchanged, so the sum equals itself turned, and only 0 can do that.');
+  const ok = gap < 1e-4 && (mode === 'own' || gapC < 1e-4);
+  WM.box('wm-roots', 'The maths for n = ' + n, lines, ok, mode === 'own'
+    ? 'Check: all ' + n + ' roots, raised to the ' + n + 'th by repeated multiplication, give your number back, <b>agree</b>. Computed here.'
+    : 'Check: all ' + n + ' roots match Curie\u2019s and give the number back when raised to the ' + n + 'th, <b>agree</b> (largest difference ' + Math.max(gap, gapC).toExponential(1) + ').');
+}
+function wmSpec() {
+  const sig = specSignal(), pw = specPower(sig), N = sig.length, peaks = [], dflt = specIsDefault();
+  const want = {}; for (const [k, a] of specTones) want[k] = (want[k] || 0) + a;
+  let gap = 0, gapC = 0;
+  for (let k = 0; k < N; k++) {
+    let X = [0, 0];
+    for (let j = 0; j < N; j++) X = WM.add(X, WM.c(sig[j], -2 * Math.PI * j * k / N));
+    const P = WM.abs2(X), kk = k <= N / 2 ? k : N - k, pred = ((N / 2) * (want[kk] || 0)) ** 2;
+    gap = Math.max(gap, Math.abs(P - pred) / Math.max(1, pred));
+    if (dflt) gapC = Math.max(gapC, Math.abs(P - pw[k]) / Math.max(1, pw[k]));
+    if (P > 1e-6 && k <= N / 2) peaks.push([k, X, P]);
+  }
+  const lines = ['the signal:  x\u2c7c = ' + specTones.map(([k, a]) => WM.n(a) + '\u00b7cos(360\u00b0\u00b7' + k + '\u00b7j/' + N + ')').join(' + '),
+    'for each bin k:  X\u2096 = \u03a3 x\u2c7c \u00b7 1\u2220(\u2212360\u00b0 \u00b7 j \u00b7 k / ' + N + '),  j = 0 \u2026 ' + (N - 1) + ';  intensity = |X\u2096|\u00b2',
+    'a tone of loudness A at k cycles spins in step with bin k, so its ' + N + ' arrows line up: |X\u2096| = ' + N + ' \u00d7 A / 2.'];
+  peaks.forEach(([k, X, P]) => lines.push('k = ' + k + ':  X = ' + WM.z(X) + '   |X|\u00b2 = ' + WM.n(P) + '   predicted (' + N + ' \u00d7 ' + WM.n(want[k] || 0) + ' / 2)\u00b2 = ' + WM.n(((N / 2) * (want[k] || 0)) ** 2) + '   (mirror at k = ' + (N - k) + ')'));
+  if (!peaks.length) lines.push('every tone is silent, so every bin is 0.');
+  lines.push('every other bin: the arrows go whole turns round the circle and cancel to 0.');
+  const ok = gap < 1e-3 && (!dflt || gapC < 1e-3);
+  WM.box('wm-spec', 'The maths', lines, ok, dflt
+    ? 'Check: all ' + N + ' bins match the N\u00b7A/2 prediction and Curie\u2019s own spectrum, <b>agree</b>.'
+    : 'Check: all ' + N + ' bins match the N\u00b7A/2 prediction, <b>agree</b>. (Curie\u2019s recorded run is the default three tones; this one is computed here.)');
+}
+function wmClicks() {
+  const deg = CK.phi, seq = clickSeq(), cur = ckCurie();
+  const p = Math.cos(deg * Math.PI / 360) ** 2, N = 200, mu = N * p, sd = Math.sqrt(N * p * (1 - p));
+  const n1 = seq.slice(0, Math.max(shown, 0)).filter(v => v === 1).length, all1 = seq.filter(v => v === 1).length;
+  const z = sd > 1e-9 ? (all1 - mu) / sd : 0;
+  const who = cur ? 'Curie\u2019s 200 draws' : 'This page\u2019s 200 draws (seed ' + (CK.seed === null ? 1 : CK.seed) + ')';
+  WM.box('wm-clicks', 'The maths at \u03c6 = ' + (+deg.toFixed(4)) + '\u00b0', [
+    'chance of detector 1 = cos\u00b2(\u03c6/2) = cos\u00b2(' + (+(deg / 2).toFixed(4)) + '\u00b0) = ' + WM.n(p) + ',  detector 2 = ' + WM.n(1 - p),
+    'expected from 200:  200 \u00d7 ' + WM.n(p) + ' = ' + mu.toFixed(1) + ' at detector 1',
+    'typical scatter:  \u221a(200 \u00d7 ' + WM.n(p) + ' \u00d7 ' + WM.n(1 - p) + ') = ' + sd.toFixed(1) + ' photons either way',
+    who + ' put ' + all1 + ' at detector 1' + (sd > 1e-9 ? ': ' + Math.abs(z).toFixed(1) + ' scatters ' + (z < 0 ? 'below' : 'above') + ' expected' : ', as it must when the chance is certain'),
+    shown ? 'so far on screen: ' + n1 + ' of ' + shown : 'press Fire to watch them land',
+  ], sd > 1e-9 ? Math.abs(z) < 3 : all1 === Math.round(mu), sd > 1e-9
+    ? 'Check: within 3 scatters of the theory, which is what real draws should do, <b>agree</b>.' + (Math.abs(z) >= 2 ? ' (Over 2 scatters: about 1 run in 20 lands this far out.)' : '')
+    : 'Check: the certain outcome happened every time, <b>agree</b>.');
+}
+function all(){drawMZI(MZ.phi);drawRing();drawRoots();drawSpec();drawClicks();renderOrder()}
+all();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',all);
+new MutationObserver(all).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+/* A thank-you to the namesake: tap a page title five times quickly, or type "curie" or "marie". */
+(function(){
+  const box = document.getElementById('marie');
+  const open = () => { if(!box.hidden) return; box.hidden = false; document.documentElement.classList.add('radium'); all(); document.getElementById('marie-x').focus(); };
+  const close = () => { box.hidden = true; document.documentElement.classList.remove('radium'); all(); };
+  document.getElementById('marie-x').addEventListener('click', close);
+  box.addEventListener('click', e => { if(e.target === box) close(); });
+  let taps = 0, last = 0;
+  document.querySelectorAll('h1').forEach(h => h.addEventListener('click', () => {
+    const now = Date.now(); taps = now - last < 700 ? taps + 1 : 1; last = now;
+    if(taps >= 5){ taps = 0; open(); }
+  }));
+  let typed = '';
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape' && !box.hidden){ close(); return; }
+    const t = e.target; if(t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
+    if(e.key.length !== 1) return;
+    typed = (typed + e.key.toLowerCase()).slice(-5);
+    if(typed === 'curie' || typed === 'marie') open();
+  });
+})();
+
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(all);
+</script>
+<script>
+const QDATA = [{"key":"split","title":"Split and rejoin","n":1,"captions":["Start: the qubit is 0, for certain.","H splits it into two equal paths. Measure now and it is a coin flip.","A second H brings the paths back together. The two routes into 1 cancel, so it is 0 again, every time."],"initial":[[1,0.0],[0,0.0]],"steps":[{"op":"h","args":[0],"before":[[1,0.0],[0,0.0]],"after":[[0.7071067811865475,0.0],[0.7071067811865475,0.0]]},{"op":"h","args":[0],"before":[[0.7071067811865475,0.0],[0.7071067811865475,0.0]],"after":[[0.9999999999999998,0.0],[6.123233995736765e-17,1.5707963267948966]]}],"schema":"curie.trace/1","library":"curie-wave3"},{"key":"nudge","title":"Split, nudge, rejoin","n":1,"captions":["Start: 0, for certain.","H splits it into two equal paths.","Z turns the 1-path half a circle. Look at the bars: nothing you could measure has changed. Only the hand moved.","Rejoin. This time the routes into 0 cancel, and it comes out 1 every time. The nudge was invisible until the paths met."],"initial":[[1,0.0],[0,0.0]],"steps":[{"op":"h","args":[0],"before":[[1,0.0],[0,0.0]],"after":[[0.7071067811865475,0.0],[0.7071067811865475,0.0]]},{"op":"z","args":[0],"before":[[0.7071067811865475,0.0],[0.7071067811865475,0.0]],"after":[[0.7071067811865475,0.0],[0.7071067811865475,3.141592653589793]]},{"op":"h","args":[0],"before":[[0.7071067811865475,0.0],[0.7071067811865475,3.141592653589793]],"after":[[6.123233995736765e-17,1.5707963267948966],[0.9999999999999998,0.0]]}],"schema":"curie.trace/1","library":"curie-wave3"},{"key":"bell","title":"Entangle two qubits","n":2,"captions":["Start: both qubits 0.","H splits qubit 0. Qubit 1 is untouched.","CNOT flips qubit 1 only where qubit 0 is 1. Now it is 00 or 11, never 01 or 10. Measure one and you know the other: they are entangled."],"initial":[[1,0.0],[0,0.0],[0,0.0],[0,0.0]],"steps":[{"op":"h","args":[0],"before":[[1,0.0],[0,0.0],[0,0.0],[0,0.0]],"after":[[0.7071067811865475,0.0],[0.0,0.0],[0.7071067811865475,0.0],[0.0,0.0]]},{"op":"cnot","args":[0,1],"before":[[0.7071067811865475,0.0],[0.0,0.0],[0.7071067811865475,0.0],[0.0,0.0]],"after":[[0.7071067811865475,0.0],[0.0,0.0],[0.0,0.0],[0.7071067811865475,0.0]]}],"schema":"curie.trace/1","library":"curie-wave3"},{"key":"ghz","title":"Entangle three","n":3,"captions":["Start: three qubits, all 0.","H splits qubit 0.","CNOT ties qubit 1 to qubit 0.","CNOT ties qubit 2 to qubit 1. All three now agree: 000 or 111, nothing in between."],"initial":[[1,0.0],[0,0.0],[0,0.0],[0,0.0],[0,0.0],[0,0.0],[0,0.0],[0,0.0]],"steps":[{"op":"h","args":[0],"before":[[1,0.0],[0,0.0],[0,0.0],[0,0.0],[0,0.0],[0,0.0],[0,0.0],[0,0.0]],"after":[[0.7071067811865475,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.7071067811865475,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]]},{"op":"cnot","args":[0,1],"before":[[0.7071067811865475,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.7071067811865475,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]],"after":[[0.7071067811865475,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.7071067811865475,0.0],[0.0,0.0]]},{"op":"cnot","args":[1,2],"before":[[0.7071067811865475,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.7071067811865475,0.0],[0.0,0.0]],"after":[[0.7071067811865475,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.7071067811865475,0.0]]}],"schema":"curie.trace/1","library":"curie-wave3"},{"key":"dj","title":"One question, whole answer","n":2,"captions":["Start: 00. A hidden rule answers 0 or 1 for each of the four inputs. Is it the same answer for all of them, or half and half?","H on qubit 0.","H on qubit 1. Now all four inputs are in play at once, equally.","Ask the rule once. Where it answers 1, that path is turned half a circle. The bars do not change; the hands do.","H on qubit 0.","H on qubit 1. If the rule were the same everywhere, this would land on 00. It lands on 11, so the rule is half and half, learned from one question instead of three."],"initial":[[1,0.0],[0,0.0],[0,0.0],[0,0.0]],"steps":[{"op":"h","args":[0],"before":[[1,0.0],[0,0.0],[0,0.0],[0,0.0]],"after":[[0.7071067811865475,0.0],[0.0,0.0],[0.7071067811865475,0.0],[0.0,0.0]]},{"op":"h","args":[1],"before":[[0.7071067811865475,0.0],[0.0,0.0],[0.7071067811865475,0.0],[0.0,0.0]],"after":[[0.4999999999999999,0.0],[0.4999999999999999,0.0],[0.4999999999999999,0.0],[0.4999999999999999,0.0]]},{"op":"oracle_phase","args":[[0,1],[0,1,1,0]],"before":[[0.4999999999999999,0.0],[0.4999999999999999,0.0],[0.4999999999999999,0.0],[0.4999999999999999,0.0]],"after":[[0.4999999999999999,0.0],[0.4999999999999999,3.141592653589793],[0.4999999999999999,3.141592653589793],[0.4999999999999999,0.0]]},{"op":"h","args":[0],"before":[[0.4999999999999999,0.0],[0.4999999999999999,3.141592653589793],[0.4999999999999999,3.141592653589793],[0.4999999999999999,0.0]],"after":[[4.329780281177465e-17,1.5707963267948966],[4.329780281177465e-17,1.5707963267948966],[0.7071067811865474,0.0],[0.7071067811865474,3.141592653589793]]},{"op":"h","args":[1],"before":[[4.329780281177465e-17,1.5707963267948966],[4.329780281177465e-17,1.5707963267948966],[0.7071067811865474,0.0],[0.7071067811865474,3.141592653589793]],"after":[[6.123233995736764e-17,1.5707963267948966],[3.7493994566546427e-33,0.0],[6.123233995736764e-17,1.5707963267948966],[0.9999999999999997,0.0]]}],"schema":"curie.trace/1","library":"curie-wave3"},{"key":"grover","title":"Find the marked one","n":2,"captions":["Start: 00. One of the four answers, 11, is marked, and we do not know which.","H on qubit 0.","H on qubit 1. All four are equally likely: 25% each.","The marker turns 11 half a circle. Still 25% each; only its hand flipped.","Now the amplifier, seven steps that reflect everything about the average. H on qubit 0...","H on qubit 1...","X on qubit 0...","X on qubit 1...","Turn 00 half a circle...","X on qubit 0...","X on qubit 1...","H on qubit 0...","H on qubit 1. Every other path cancelled; 11 took all of it. 100% in one round."],"initial":[[1,0.0],[0,0.0],[0,0.0],[0,0.0]],"steps":[{"op":"h","args":[0],"before":[[1,0.0],[0,0.0],[0,0.0],[0,0.0]],"after":[[0.7071067811865475,0.0],[0.0,0.0],[0.7071067811865475,0.0],[0.0,0.0]]},{"op":"h","args":[1],"before":[[0.7071067811865475,0.0],[0.0,0.0],[0.7071067811865475,0.0],[0.0,0.0]],"after":[[0.4999999999999999,0.0],[0.4999999999999999,0.0],[0.4999999999999999,0.0],[0.4999999999999999,0.0]]},{"op":"flip","args":[3],"before":[[0.4999999999999999,0.0],[0.4999999999999999,0.0],[0.4999999999999999,0.0],[0.4999999999999999,0.0]],"after":[[0.4999999999999999,0.0],[0.4999999999999999,0.0],[0.4999999999999999,0.0],[0.4999999999999999,3.141592653589793]]},{"op":"h","args":[0],"before":[[0.4999999999999999,0.0],[0.4999999999999999,0.0],[0.4999999999999999,0.0],[0.4999999999999999,3.141592653589793]],"after":[[0.7071067811865474,0.0],[4.329780281177465e-17,1.5707963267948966],[4.329780281177465e-17,1.5707963267948966],[0.7071067811865474,0.0]]},{"op":"h","args":[1],"before":[[0.7071067811865474,0.0],[4.329780281177465e-17,1.5707963267948966],[4.329780281177465e-17,1.5707963267948966],[0.7071067811865474,0.0]],"after":[[0.49999999999999983,6.123233995736766e-17],[0.49999999999999983,-6.123233995736766e-17],[0.49999999999999983,6.123233995736766e-17],[0.49999999999999983,3.141592653589793]]},{"op":"x","args":[0],"before":[[0.49999999999999983,6.123233995736766e-17],[0.49999999999999983,-6.123233995736766e-17],[0.49999999999999983,6.123233995736766e-17],[0.49999999999999983,3.141592653589793]],"after":[[0.49999999999999983,6.123233995736766e-17],[0.49999999999999983,3.141592653589793],[0.49999999999999983,6.123233995736766e-17],[0.49999999999999983,-6.123233995736766e-17]]},{"op":"x","args":[1],"before":[[0.49999999999999983,6.123233995736766e-17],[0.49999999999999983,3.141592653589793],[0.49999999999999983,6.123233995736766e-17],[0.49999999999999983,-6.123233995736766e-17]],"after":[[0.49999999999999983,3.141592653589793],[0.49999999999999983,6.123233995736766e-17],[0.49999999999999983,-6.123233995736766e-17],[0.49999999999999983,6.123233995736766e-17]]},{"op":"mcz","args":[[0,1]],"before":[[0.49999999999999983,3.141592653589793],[0.49999999999999983,6.123233995736766e-17],[0.49999999999999983,-6.123233995736766e-17],[0.49999999999999983,6.123233995736766e-17]],"after":[[0.49999999999999983,3.141592653589793],[0.49999999999999983,6.123233995736766e-17],[0.49999999999999983,-6.123233995736766e-17],[0.49999999999999983,3.141592653589793]]},{"op":"x","args":[0],"before":[[0.49999999999999983,3.141592653589793],[0.49999999999999983,6.123233995736766e-17],[0.49999999999999983,-6.123233995736766e-17],[0.49999999999999983,3.141592653589793]],"after":[[0.49999999999999983,-6.123233995736766e-17],[0.49999999999999983,3.141592653589793],[0.49999999999999983,3.141592653589793],[0.49999999999999983,6.123233995736766e-17]]},{"op":"x","args":[1],"before":[[0.49999999999999983,-6.123233995736766e-17],[0.49999999999999983,3.141592653589793],[0.49999999999999983,3.141592653589793],[0.49999999999999983,6.123233995736766e-17]],"after":[[0.49999999999999983,3.141592653589793],[0.49999999999999983,-6.123233995736766e-17],[0.49999999999999983,6.123233995736766e-17],[0.49999999999999983,3.141592653589793]]},{"op":"h","args":[0],"before":[[0.49999999999999983,3.141592653589793],[0.49999999999999983,-6.123233995736766e-17],[0.49999999999999983,6.123233995736766e-17],[0.49999999999999983,3.141592653589793]],"after":[[6.494670421766197e-17,1.5707963267948966],[2.1648901405887323e-17,1.5707963267948966],[0.7071067811865472,3.141592653589793],[0.7071067811865472,-3.061616997868383e-17]]},{"op":"h","args":[1],"before":[[6.494670421766197e-17,1.5707963267948966],[2.1648901405887323e-17,1.5707963267948966],[0.7071067811865472,3.141592653589793],[0.7071067811865472,-3.061616997868383e-17]],"after":[[6.123233995736762e-17,1.5707963267948966],[3.061616997868381e-17,1.5707963267948966],[4.592425496802573e-17,1.5707963267948966],[0.9999999999999996,3.141592653589793]]}],"schema":"curie.trace/1","library":"curie-wave3"}];
+(function(){
+const SQ = Math.SQRT1_2, EPS = 1e-9;
+const $ = id => document.getElementById(id);
+
+/* ---- a small browser engine with Curie's rules (q0 is the leftmost bit) ---- */
+function fromPolar(list){return list.map(([r,t]) => [r*Math.cos(t), r*Math.sin(t)])}
+function zerosState(n){const s=[]; for(let i=0;i<(1<<n);i++) s.push([i===0?1:0,0]); return s}
+function nOf(s){return Math.round(Math.log2(s.length))}
+function mask(n,q){return 1 << (n-1-q)}
+function mulPhase(a,phi){const c=Math.cos(phi), s=Math.sin(phi); return [a[0]*c-a[1]*s, a[0]*s+a[1]*c]}
+function apply(state, op, args){
+  const s = state.map(a => [a[0],a[1]]), n = nOf(s), N = s.length;
+  const one = (q, f) => {const m = mask(n,q); for(let i=0;i<N;i++) if(i & m) s[i] = f(s[i]);};
+  switch(op){
+    case 'h': {const m=mask(n,args[0]); for(let i=0;i<N;i++) if(!(i&m)){const a=s[i], b=s[i|m];
+      s[i]=[(a[0]+b[0])*SQ,(a[1]+b[1])*SQ]; s[i|m]=[(a[0]-b[0])*SQ,(a[1]-b[1])*SQ];} return s;}
+    case 'x': {const m=mask(n,args[0]); for(let i=0;i<N;i++) if(!(i&m)){const t=s[i]; s[i]=s[i|m]; s[i|m]=t;} return s;}
+    case 'z': one(args[0], a => [-a[0],-a[1]]); return s;
+    case 's': one(args[0], a => mulPhase(a, Math.PI/2)); return s;
+    case 't': one(args[0], a => mulPhase(a, Math.PI/4)); return s;
+    case 'phase': one(args[0], a => mulPhase(a, args[1])); return s;
+    case 'ry': {const m=mask(n,args[0]), c=Math.cos(args[1]/2), sn=Math.sin(args[1]/2); for(let i=0;i<N;i++) if(!(i&m)){const a=s[i], b=s[i|m];
+      s[i]=[c*a[0]-sn*b[0], c*a[1]-sn*b[1]]; s[i|m]=[sn*a[0]+c*b[0], sn*a[1]+c*b[1]];} return s;}
+    case 'cnot': {const c=mask(n,args[0]), t=mask(n,args[1]); for(let i=0;i<N;i++) if((i&c) && !(i&t)){const u=s[i]; s[i]=s[i|t]; s[i|t]=u;} return s;}
+    case 'cz': {const m=mask(n,args[0])|mask(n,args[1]); for(let i=0;i<N;i++) if((i&m)===m) s[i]=[-s[i][0],-s[i][1]]; return s;}
+    case 'swap': {const a=mask(n,args[0]), b=mask(n,args[1]); const out=s.map(v=>v); for(let i=0;i<N;i++){let j=i&~(a|b); if(i&a) j|=b; if(i&b) j|=a; out[j]=s[i];} return out;}
+    case 'mcz': {let m=0; for(const q of args[0]) m|=mask(n,q); for(let i=0;i<N;i++) if((i&m)===m) s[i]=[-s[i][0],-s[i][1]]; return s;}
+    case 'flip': s[args[0]]=[-s[args[0]][0],-s[args[0]][1]]; return s;
+    case 'oracle_phase': {const ins=args[0], table=args[1]; for(let i=0;i<N;i++){let k=0; for(const q of ins) k=(k<<1)|((i&mask(n,q))?1:0); if(table[k]) s[i]=[-s[i][0],-s[i][1]];} return s;}
+  }
+  throw new Error('unknown op ' + op);
+}
+function dist(a,b){let m=0; for(let i=0;i<a.length;i++) m=Math.max(m, Math.hypot(a[i][0]-b[i][0], a[i][1]-b[i][1])); return m}
+
+/* ---- check the browser engine against every Curie step, every time the page opens ---- */
+(function check(){
+  let steps=0, worst=0, chainWorst=0;
+  for(const p of QDATA){
+    let chain = fromPolar(p.initial);
+    for(const st of p.steps){
+      const mine = apply(fromPolar(st.before), st.op, st.args);
+      worst = Math.max(worst, dist(mine, fromPolar(st.after)));
+      chain = apply(chain, st.op, st.args);
+      chainWorst = Math.max(chainWorst, dist(chain, fromPolar(st.after)));
+      steps++;
+    }
+  }
+  const big = Math.max(worst, chainWorst), ok = big < EPS;
+  window.__qcheck = {steps, worst, chainWorst, ok};
+  $('check').innerHTML = ok
+    ? 'Browser engine vs Curie: <b>agree</b> on all ' + steps + ' recorded steps of ' + QDATA.length + ' circuits (largest difference ' + big.toExponential(1) + ').'
+    : '<span class="bad">Browser engine and Curie DISAGREE</span> (largest difference ' + big.toExponential(2) + '). Trust the presets, not your own circuits, until this is fixed.';
+})();
+
+/* ---- viewer ---- */
+function bits(i,n){return i.toString(2).padStart(n,'0')}
+function label(op,args,n){
+  switch(op){
+    case 'cnot': return 'CNOT ' + args[0] + '→' + args[1];
+    case 'cz': return 'CZ ' + args[0] + '·' + args[1];
+    case 'swap': return 'SWAP ' + args[0] + '·' + args[1];
+    case 'mcz': return 'Z all';
+    case 'flip': return 'Mark ' + bits(args[0], n);
+    case 'oracle_phase': return 'Ask';
+    case 'phase': return 'Turn q' + args[0];
+    default: return op.toUpperCase() + ' q' + args[0];
+  }
+}
+const SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs){const e = document.createElementNS(SVGNS, name); for(const k in attrs) e.setAttribute(k, attrs[k]); return e}
+function hand(a){
+  const r = Math.hypot(a[0],a[1]), t = Math.atan2(a[1],a[0]);
+  const svg = el('svg', {width:'30', height:'30', viewBox:'-15 -15 30 30', 'aria-hidden':'true'});
+  svg.appendChild(el('circle', {r:'12', fill:'none', stroke:'var(--rule)', 'stroke-width':'1.5'}));
+  if(r > EPS){
+    const L = 11 * Math.min(1, 0.35 + r);
+    svg.appendChild(el('line', {x1:'0', y1:'0', x2:(L*Math.cos(t)).toFixed(2), y2:(-L*Math.sin(t)).toFixed(2),
+      stroke:'var(--beam2)', 'stroke-width':'2.5', 'stroke-linecap':'round'}));
+    svg.appendChild(el('circle', {r:'2', fill:'var(--beam2)'}));
+  }
+  return svg;
+}
+
+let cur = null, k = 0, timer = null;
+function states(p){
+  if(p.computed) return p.computed;
+  return [fromPolar(p.initial)].concat(p.steps.map(s => fromPolar(s.after)));
+}
+function render(){
+  if(!cur) return;
+  const st = states(cur), n = cur.n, amps = st[k];
+  const strip = $('strip'); strip.textContent = '';
+  const b0 = document.createElement('button'); b0.type='button'; b0.textContent='start'; b0.className = k===0?'now':'done';
+  b0.onclick=()=>{stop(); k=0; render()}; strip.appendChild(b0);
+  cur.steps.forEach((s,i) => {const b=document.createElement('button'); b.type='button'; b.textContent=label(s.op,s.args,n);
+    b.className = (i+1===k)?'now':((i+1<k)?'done':''); b.onclick=()=>{stop(); k=i+1; render()}; strip.appendChild(b)});
+  $('cap').textContent = cur.captions[k];
+  const box = $('amps');
+  if(box.children.length !== amps.length){
+    box.textContent = '';
+    amps.forEach((_,i) => {const row=document.createElement('div'); row.className='amp';
+      row.innerHTML = '<span class="lab">' + bits(i,n) + '</span><span class="track"><span class="fill"></span></span><span class="pct"></span><span class="h"></span>';
+      box.appendChild(row)});
+  }
+  amps.forEach((a,i) => {const row = box.children[i], p = a[0]*a[0] + a[1]*a[1];
+    row.querySelector('.fill').style.width = (100*p).toFixed(2) + '%';
+    const tiny = p < 5e-13, whole = p > 0.9995;
+    row.querySelector('.pct').textContent = (tiny ? 0 : 100*p).toFixed(tiny || whole ? 0 : 1) + '%';
+    const h = row.querySelector('.h'); h.textContent=''; h.appendChild(hand(a));
+    row.setAttribute('aria-label', bits(i,n) + ': ' + (tiny ? 0 : 100*p).toFixed(1) + ' percent')});
+  qMath(cur, k, st);
+  $('qpos').textContent = 'step ' + k + ' of ' + cur.steps.length;
+  $('qprev').disabled = k===0; $('qnext').disabled = k===cur.steps.length;
+}
+function stop(){ if(timer){clearInterval(timer); timer=null; $('qplay').textContent='Play';} }
+function choose(p){
+  stop(); cur = p; k = 0; $('amps').textContent='';
+  [...$('qpick').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.key === p.key)));
+  render();
+}
+function pickButton(p){const b=document.createElement('button'); b.type='button'; b.textContent=p.title; b.dataset.key=p.key; b.onclick=()=>choose(p); return b}
+QDATA.forEach(p => $('qpick').appendChild(pickButton(p)));
+$('qprev').onclick = () => {stop(); if(k>0){k--; render()}};
+$('qnext').onclick = () => {stop(); if(k<cur.steps.length){k++; render()}};
+$('qplay').onclick = () => {
+  if(timer){stop(); return}
+  if(k>=cur.steps.length) k=0;
+  $('qplay').textContent='Pause'; render();
+  timer = setInterval(() => {if(k>=cur.steps.length){stop(); return} k++; render()}, 1100);
+};
+
+/* ---- build your own ---- */
+const GATES = [['H','h',1],['X','x',1],['Z','z',1],['S','s',1],['T','t',1],['CNOT','cnot',2],['CZ','cz',2]];
+const SAY = {h:'H on qubit %: splits it, or rejoins it if it was already split.', x:'X on qubit %: swaps its 0 and 1.',
+  z:'Z on qubit %: turns its 1-path half a circle.', s:'S on qubit %: turns its 1-path a quarter circle.',
+  t:'T on qubit %: turns its 1-path an eighth of a circle.'};
+let mine = [], armed = null, picked = [];
+const MAX = 14;
+function qn(){return +$('qn').value}
+function drawMine(){
+  const m = $('mine'); m.textContent='';
+  if(!mine.length){m.textContent='(empty)'; return}
+  mine.forEach(([op,args]) => {const s=document.createElement('span'); s.textContent=label(op,args,qn());
+    s.style.cssText='border:1px solid var(--rule);border-radius:6px;padding:5px 9px'; m.appendChild(s)});
+}
+function drawQubits(){
+  const box = $('qsel'); box.textContent='';
+  for(let q=0;q<qn();q++){const b=document.createElement('button'); b.type='button'; b.textContent='qubit '+q; b.onclick=()=>tapQubit(q); box.appendChild(b)}
+}
+function hint(t){$('hint').textContent=t}
+function arm(g){
+  armed = g; picked = [];
+  [...$('pal').children].forEach(b => b.classList.toggle('arm', b.dataset.op === g[1]));
+  hint(g[2]===1 ? g[0] + ': tap the qubit.' : (qn()<2 ? 'Two-qubit gates need at least 2 qubits.' : g[0] + ': tap the control qubit, then the target.'));
+}
+function tapQubit(q){
+  if(!armed){hint('Tap a gate first.'); return}
+  if(mine.length>=MAX){hint('That is the limit, ' + MAX + ' gates. Undo one or step through it.'); return}
+  if(armed[2]===1){mine.push([armed[1],[q]]); drawMine(); hint('Added. Tap another qubit for the same gate, or pick a new gate.'); return}
+  if(qn()<2) return;
+  picked.push(q);
+  if(picked.length===1){hint(armed[0] + ': control is qubit ' + q + '. Now the target.'); return}
+  if(picked[0]===picked[1]){picked=[picked[0]]; hint('The target must be a different qubit.'); return}
+  mine.push([armed[1],[picked[0],picked[1]]]); picked=[]; drawMine(); hint('Added. Tap a control again for another ' + armed[0] + ', or pick a new gate.');
+}
+GATES.forEach(g => {const b=document.createElement('button'); b.type='button'; b.textContent=g[0]; b.dataset.op=g[1]; b.onclick=()=>arm(g); $('pal').appendChild(b)});
+$('qn').onchange = () => {mine=[]; picked=[]; drawQubits(); drawMine(); hint('Tap a gate, then the qubit it acts on.')};
+$('qundo').onclick = () => {mine.pop(); picked=[]; drawMine()};
+$('qclear').onclick = () => {mine=[]; picked=[]; drawMine()};
+$('qshow').onclick = () => {
+  if(!mine.length){hint('Add a gate or two first.'); return}
+  const n = qn(), computed = [zerosState(n)];
+  mine.forEach(([op,args]) => computed.push(apply(computed[computed.length-1], op, args)));
+  const caps = ['Start: ' + (n===1 ? 'the qubit is 0.' : 'all ' + n + ' qubits are 0.')].concat(mine.map(([op,args]) =>
+    op==='cnot' ? 'CNOT: flips qubit ' + args[1] + ' wherever qubit ' + args[0] + ' is 1.' :
+    op==='cz' ? 'CZ: turns the paths where qubits ' + args[0] + ' and ' + args[1] + ' are both 1 half a circle.' :
+    SAY[op].replace('%', args[0])));
+  const p = {key:'mine', title:'Yours', n, captions:caps, steps:mine.map(([op,args]) => ({op,args})), computed};
+  const old = [...$('qpick').children].find(x => x.dataset.key==='mine');
+  if(old) old.remove();
+  $('qpick').appendChild(pickButton(p));
+  choose(p);
+  $('qv-h').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start'});
+};
+drawQubits(); drawMine();
+
+/* ---- the maths, step by step ----
+   The HAND column is computed here, independently, from each gate's 2x2 matrix (or its swap/sign rule)
+   in plain complex arithmetic. The ENGINE column is apply() above, the one checked against Curie on load.
+   Every step compares the two, so a wrong answer stops being taught the moment it appears. */
+const C = {
+  add: (a,b) => [a[0]+b[0], a[1]+b[1]],
+  mul: (a,b) => [a[0]*b[0]-a[1]*b[1], a[0]*b[1]+a[1]*b[0]],
+  neg: a => [-a[0], -a[1]],
+  abs: a => Math.hypot(a[0], a[1]),
+  ang: a => Math.atan2(a[1], a[0]),
+};
+const MINUS = '−';
+function num(x){const v = Math.abs(x) < 5e-10 ? 0 : x; return (v < 0 ? MINUS : '') + Math.abs(v).toFixed(3)}
+function fmt(z){
+  const re = Math.abs(z[0]) < 5e-10 ? 0 : z[0], im = Math.abs(z[1]) < 5e-10 ? 0 : z[1];
+  if(im === 0) return num(re);
+  if(re === 0) return num(im) + 'i';
+  return num(re) + (im < 0 ? ' ' + MINUS + ' ' : ' + ') + Math.abs(im).toFixed(3) + 'i';
+}
+function ket(i,n){return '|' + bits(i,n) + '⟩'}
+const DEG = Math.PI / 180;
+function matrixOf(st){
+  const s2 = Math.SQRT1_2, c = Math.cos, sn = Math.sin, th = (st.deg || 0) * DEG;
+  switch(st.op){
+    case 'h': return [[[s2,0],[s2,0]],[[s2,0],[-s2,0]]];
+    case 'x': return [[[0,0],[1,0]],[[1,0],[0,0]]];
+    case 'z': return [[[1,0],[0,0]],[[0,0],[-1,0]]];
+    case 'phase': return [[[1,0],[0,0]],[[0,0],[c(th),sn(th)]]];
+    case 'ry': return [[[c(th/2),0],[-sn(th/2),0]],[[sn(th/2),0],[c(th/2),0]]];
+  }
+  return null;
+}
+function stepName(st){
+  switch(st.op){
+    case 'h': return 'H on qubit ' + st.q;
+    case 'x': return 'X on qubit ' + st.q;
+    case 'z': return 'Z on qubit ' + st.q;
+    case 'phase': return 'Phase ' + st.deg + '° on qubit ' + st.q;
+    case 'ry': return 'Ry ' + st.deg + '° on qubit ' + st.q;
+    case 'cnot': return 'CNOT, control ' + st.q + ', target ' + st.t;
+    case 'cz': return 'CZ on qubits ' + st.q + ' and ' + st.t;
+    case 'mcz': return 'Z on all of qubits ' + st.qs.join(', ');
+    case 'flip': return 'Mark ' + ket(st.idx, st.n || 0).replace('||', '|');
+    case 'oracle': return 'Ask the question (oracle)';
+  }
+}
+function shortName(st){
+  switch(st.op){
+    case 'phase': return 'P' + st.deg + ' q' + st.q;
+    case 'ry': return 'Ry' + st.deg + ' q' + st.q;
+    case 'cnot': return 'CNOT ' + st.q + '→' + st.t;
+    case 'cz': return 'CZ ' + st.q + '·' + st.t;
+    default: return st.op.toUpperCase() + ' q' + st.q;
+  }
+}
+function engineArgs(st){
+  if(st.op === 'phase' || st.op === 'ry') return [st.q, st.deg * DEG];
+  if(st.op === 'cnot' || st.op === 'cz') return [st.q, st.t];
+  return [st.q];
+}
+/* One step by hand: returns the new amplitudes and the written-out lines. */
+function handStep(amps, n, st){
+  const out = amps.map(a => [a[0], a[1]]), lines = [], N = amps.length;
+  const M = matrixOf(st);
+  if(M){
+    const m = mask(n, st.q);
+    for(let i=0;i<N;i++){
+      if(i & m) continue;
+      const j = i | m, a = amps[i], b = amps[j];
+      if(C.abs(a) < EPS && C.abs(b) < EPS) continue;
+      [[i, M[0][0], M[0][1]], [j, M[1][0], M[1][1]]].forEach(([k, p, q]) => {
+        const t1 = C.mul(p, a), t2 = C.mul(q, b), r = C.add(t1, t2);
+        out[k] = r;
+        let tag = null;
+        if(C.abs(t1) > EPS && C.abs(t2) > EPS){
+          if(C.abs(r) < EPS) tag = ['cancel', 'the two paths cancel'];
+          else if(Math.abs(C.abs(r) - (C.abs(t1) + C.abs(t2))) < EPS) tag = ['add', 'the two paths add up'];
+          else if(C.abs(r) > Math.max(C.abs(t1), C.abs(t2))) tag = ['add', 'the paths partly reinforce'];
+          else tag = ['cancel', 'the paths partly cancel'];
+        }
+        lines.push({text: 'new ' + ket(k,n) + ' = (' + fmt(p) + ')(' + fmt(a) + ') + (' + fmt(q) + ')(' + fmt(b) + ') = ' + fmt(r), tag});
+      });
+    }
+    return {out, lines, matrix: M};
+  }
+  if(st.op === 'cnot'){
+    const c = mask(n, st.q), t = mask(n, st.t);
+    for(let i=0;i<N;i++){
+      if((i & c) && !(i & t)){
+        const j = i | t;
+        out[i] = amps[j]; out[j] = amps[i];
+        if(C.abs(amps[i]) > EPS || C.abs(amps[j]) > EPS)
+          lines.push({text: 'new ' + ket(i,n) + ' = old ' + ket(j,n) + ' = ' + fmt(amps[j]) + ',   new ' + ket(j,n) + ' = old ' + ket(i,n) + ' = ' + fmt(amps[i]), tag: null});
+      }
+    }
+    if(!lines.length) lines.push({text: 'Every amplitude where qubit ' + st.q + ' is 1 is already zero, so nothing moves.', tag: null});
+    return {out, lines, matrix: null};
+  }
+  if(st.op === 'cz'){
+    const m = mask(n, st.q) | mask(n, st.t);
+    for(let i=0;i<N;i++){
+      if((i & m) === m){
+        out[i] = C.neg(amps[i]);
+        if(C.abs(amps[i]) > EPS) lines.push({text: 'new ' + ket(i,n) + ' = ' + MINUS + '(old ' + ket(i,n) + ') = ' + MINUS + '(' + fmt(amps[i]) + ') = ' + fmt(out[i]), tag: null});
+      }
+    }
+    if(!lines.length) lines.push({text: 'Every amplitude where both qubits are 1 is zero, so there is nothing to flip.', tag: null});
+    return {out, lines, matrix: null};
+  }
+  if(st.op === 'mcz' || st.op === 'flip' || st.op === 'oracle'){
+    let hit;
+    if(st.op === 'mcz'){ let m = 0; for(const q of st.qs) m |= mask(n, q); hit = i => (i & m) === m; }
+    else if(st.op === 'flip') hit = i => i === st.idx;
+    else hit = i => { let key = 0; for(const q of st.ins) key = (key << 1) | ((i & mask(n, q)) ? 1 : 0); return !!st.table[key]; };
+    for(let i=0;i<N;i++){
+      if(hit(i)){
+        out[i] = C.neg(amps[i]);
+        if(C.abs(amps[i]) > EPS) lines.push({text: 'new ' + ket(i,n) + ' = ' + MINUS + '(old ' + ket(i,n) + ') = ' + MINUS + '(' + fmt(amps[i]) + ') = ' + fmt(out[i]), tag: null});
+      }
+    }
+    if(!lines.length) lines.push({text: 'Every amplitude this step would flip is already zero.', tag: null});
+    return {out, lines, matrix: null};
+  }
+  throw new Error('no hand rule for ' + st.op);
+}
+const WHY = {
+  h: 'Mixes each pair of amplitudes that differ only in this qubit: their sum and their difference, each scaled by 0.707.',
+  x: 'Swaps each pair of amplitudes that differ only in this qubit.',
+  z: 'Leaves the 0-path alone and turns every amplitude where this qubit is 1 half a circle (times −1).',
+  phase: 'Leaves the 0-path alone and turns every amplitude where this qubit is 1 by the angle you gave.',
+  ry: 'Rotates each pair of amplitudes that differ only in this qubit by half the angle you gave.',
+  cnot: 'Where the control qubit is 1, swaps the two amplitudes that differ only in the target qubit. Everything else stays.',
+  cz: 'Flips the sign of every amplitude where both qubits are 1. Probabilities do not change; only the phase does.',
+  mcz: 'Flips the sign of the one amplitude where every listed qubit is 1.',
+  flip: 'Flips the sign of one amplitude, the marked answer. Its chance is unchanged: the mark lives only in the phase.',
+  oracle: 'Flips the sign of every amplitude whose input the hidden function answers 1 for. The answer is hidden in the phases.',
+};
+/* Engine op -> a step the hand rules understand. */
+function stepFromOp(op, args, n){
+  switch(op){
+    case 's': return {op:'phase', q:args[0], deg:90};
+    case 't': return {op:'phase', q:args[0], deg:45};
+    case 'phase': case 'ry': return {op, q:args[0], deg:+(args[1]/DEG).toFixed(6)};
+    case 'cnot': case 'cz': return {op, q:args[0], t:args[1]};
+    case 'mcz': return {op, qs:args[0]};
+    case 'flip': return {op, idx:args[0], n};
+    case 'oracle_phase': return {op:'oracle', ins:args[0], table:args[1]};
+    default: return {op, q:args[0]};
+  }
+}
+/* The same written-out maths, for the circuit viewer above: each step by hand, checked against
+   the state Curie recorded (presets) or the engine computed (your own circuits). */
+function qMath(cur, k, st){
+  const box = $('qmath');
+  if(k === 0){ box.innerHTML = '<p class="mq-why">Tap Next and each step shows its maths here: the matrix, every sum, and whether the paths add up or cancel.</p>'; return; }
+  const n = cur.n, raw = cur.steps[k-1], step = stepFromOp(raw.op, raw.args, n);
+  let d;
+  try { d = handStep(st[k-1], n, step); } catch(e){ box.innerHTML = '<p class="mq-why">No written-out maths for this gate yet.</p>'; return; }
+  let html = '<p class="mq-title">Step ' + k + ': ' + stepName(step) + '</p><p class="mq-why">' + (WHY[step.op] || '') + '</p>';
+  if(d.matrix){
+    const M = d.matrix;
+    html += '<div class="mq-mat"><span>matrix</span><span class="grid"><span>' + fmt(M[0][0]) + '</span><span>' + fmt(M[0][1]) +
+      '</span><span>' + fmt(M[1][0]) + '</span><span>' + fmt(M[1][1]) + '</span></span></div>';
+  }
+  html += '<div class="mq-lines">' + d.lines.map(L => '<div class="mq-line"><code>' + esc(L.text) + '</code>' +
+    (L.tag ? '<span class="tag ' + L.tag[0] + '">' + L.tag[1] + '</span>' : '') + '</div>').join('') + '</div>';
+  const diff = dist(d.out, st[k]), who = cur.computed ? 'the engine' : "Curie’s recorded step";
+  html += '<p class="mq-ok">' + (diff < 1e-6 ?
+    'Check: the hand maths and ' + who + ' <b>agree</b> (largest difference ' + diff.toExponential(1) + ').' :
+    '<span class="bad">Check failed: the hand maths and ' + who + ' disagree by ' + diff.toExponential(2) + '.</span>') + '</p>';
+  box.innerHTML = html;
+}
+const LESSONS = [
+  {key:'int', title:'Interference', n:1, start:0, steps:[{op:'h',q:0},{op:'h',q:0}],
+   note:'H then H does nothing: the two routes into |1⟩ arrive with opposite signs and cancel.'},
+  {key:'flip', title:'A phase flip moves the answer', n:1, start:0, steps:[{op:'h',q:0},{op:'phase',q:0,deg:180},{op:'h',q:0}],
+   note:'One 180° turn between the two H gates, and the answer moves from |0⟩ to |1⟩.'},
+  {key:'ent', title:'Entanglement', n:2, start:0, steps:[{op:'h',q:0},{op:'cnot',q:0,t:1}],
+   note:'After the CNOT the two qubits can no longer be described one at a time.'},
+  {key:'grv', title:'Grover, four items', n:2, start:0, steps:[{op:'h',q:0},{op:'h',q:1},{op:'cz',q:0,t:1},
+   {op:'h',q:0},{op:'h',q:1},{op:'x',q:0},{op:'x',q:1},{op:'cz',q:0,t:1},{op:'x',q:0},{op:'x',q:1},{op:'h',q:0},{op:'h',q:1}],
+   note:'The CZ marks |11⟩ by flipping its sign. The next nine gates reflect every amplitude about the average, which turns that sign into probability 1. The final minus sign on |11⟩ is a global phase: no measurement can see it.'},
+];
+let MQ = {n:2, start:0, custom:null, steps:[], note:'', k:0};
+function startState(){
+  const N = 1 << MQ.n, s = [];
+  for(let i=0;i<N;i++) s.push([0,0]);
+  if(MQ.n === 1 && MQ.custom){
+    const a = MQ.custom[0], b = MQ.custom[1], r = Math.hypot(a, b);
+    if(r > 0){ s[0] = [a/r, 0]; s[1] = [b/r, 0]; return s; }
+  }
+  s[MQ.start] = [1, 0];
+  return s;
+}
+function runAll(){
+  const hand = [startState()], engine = [startState()], details = [];
+  MQ.steps.forEach(st => {
+    const h = handStep(hand[hand.length-1], MQ.n, st);
+    hand.push(h.out); details.push(h);
+    engine.push(apply(engine[engine.length-1], st.op, engineArgs(st)));
+  });
+  return {hand, engine, details};
+}
+function stateTable(amps, n){
+  let rows = '';
+  amps.forEach((a,i) => {
+    const r = C.abs(a), p = r*r, zero = r < EPS;
+    rows += '<tr class="' + (zero ? 'zero' : '') + '"><td>' + ket(i,n) + '</td><td>' + fmt(a) + '</td><td>' + r.toFixed(3) +
+      '</td><td>' + (zero ? '—' : (C.ang(a)/DEG).toFixed(1) + '°') + '</td><td>' + (100*p).toFixed(1) + '%</td></tr>';
+  });
+  return '<div class="mq-tablebox"><table class="mq-table"><thead><tr><th>state</th><th>amplitude</th><th>size</th><th>angle</th><th>chance</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+}
+function productLine(amps, n){
+  if(n !== 2) return '';
+  const l = C.mul(amps[0], amps[3]), r = C.mul(amps[1], amps[2]), same = C.abs(C.add(l, C.neg(r))) < 1e-9;
+  return '<div class="mq-line"><code>amp(00) × amp(11) = ' + fmt(l) + ',   amp(01) × amp(10) = ' + fmt(r) + '</code>' +
+    '<span class="tag ' + (same ? '' : 'cancel') + '">' + (same ? 'equal: describable one qubit at a time' : 'not equal: the qubits are entangled') + '</span></div>';
+}
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function mqRender(){
+  const run = runAll(), K = MQ.steps.length, k = Math.min(MQ.k, K), n = MQ.n;
+  MQ.k = k;
+  const strip = $('mq-strip'); strip.textContent = '';
+  const b0 = document.createElement('button'); b0.type='button'; b0.textContent='start'; b0.className = k===0 ? 'now' : 'done';
+  b0.onclick = () => {MQ.k = 0; mqRender()}; strip.appendChild(b0);
+  MQ.steps.forEach((st,i) => {const b = document.createElement('button'); b.type='button'; b.textContent = shortName(st);
+    b.className = (i+1===k) ? 'now' : ((i+1<k) ? 'done' : ''); b.onclick = () => {MQ.k = i+1; mqRender()}; strip.appendChild(b)});
+  $('mq-pos').textContent = K ? 'step ' + k + ' of ' + K : 'no steps yet';
+  $('mq-prev').disabled = k === 0; $('mq-next').disabled = k === K;
+  let html = '';
+  if(k === 0){
+    html += '<p class="mq-title">Start</p><p class="mq-why">' + (MQ.n === 1 && MQ.custom ?
+      'Your amounts, scaled so the chances add up to 100%: each is divided by √(a² + b²).' :
+      'Every qubit starts in a definite state, so one amplitude is 1 and the rest are 0.') + '</p>';
+    html += stateTable(run.hand[0], n);
+    if(K) html += '<p class="mq-why">Tap Next, or a step above, to see its maths.</p>';
+  } else {
+    const st = MQ.steps[k-1], d = run.details[k-1];
+    html += '<p class="mq-title">Step ' + k + ': ' + stepName(st) + '</p><p class="mq-why">' + WHY[st.op] + '</p>';
+    if(d.matrix){
+      const M = d.matrix;
+      html += '<div class="mq-mat"><span>matrix</span><span class="grid"><span>' + fmt(M[0][0]) + '</span><span>' + fmt(M[0][1]) +
+        '</span><span>' + fmt(M[1][0]) + '</span><span>' + fmt(M[1][1]) + '</span></span></div>';
+    }
+    html += '<div class="mq-lines">' + d.lines.map(L => '<div class="mq-line"><code>' + esc(L.text) + '</code>' +
+      (L.tag ? '<span class="tag ' + L.tag[0] + '">' + L.tag[1] + '</span>' : '') + '</div>').join('') + '</div>';
+    html += '<p class="mq-sub">After this step</p>' + stateTable(run.hand[k], n);
+    if(n === 2 && (st.op === 'cnot' || st.op === 'cz' || k === K)) html += '<div class="mq-lines">' + productLine(run.hand[k], n) + '</div>';
+    const diff = dist(run.hand[k], run.engine[k]);
+    html += '<p class="mq-ok">' + (diff < EPS ?
+      'Check: the hand maths and the engine <b>agree</b> (largest difference ' + diff.toExponential(1) + ').' :
+      '<span class="bad">Check failed: the hand maths and the engine disagree by ' + diff.toExponential(2) + '. Do not trust this step.</span>') + '</p>';
+    if(k === K && MQ.note) html += '<p class="mq-why">' + MQ.note + '</p>';
+  }
+  $('mq-step').innerHTML = html;
+}
+function mqFillSelects(){
+  const n = +$('mq-n').value, st = $('mq-start'), keepStart = st.value;
+  st.textContent = '';
+  for(let i=0;i<(1<<n);i++){const o = document.createElement('option'); o.value = String(i); o.textContent = ket(i,n); st.appendChild(o)}
+  if(n === 1){const o = document.createElement('option'); o.value = 'custom'; o.textContent = 'your own amounts'; st.appendChild(o)}
+  if([...st.options].some(o => o.value === keepStart)) st.value = keepStart;
+  ['mq-q','mq-t'].forEach(id => {const s = $(id), keep = s.value; s.textContent = '';
+    for(let q=0;q<n;q++){const o = document.createElement('option'); o.value = String(q); o.textContent = 'qubit ' + q; s.appendChild(o)}
+    if(keep !== '' && +keep < n) s.value = keep;});
+  if(n > 1 && $('mq-t').value === $('mq-q').value) $('mq-t').value = String((+$('mq-q').value + 1) % n);
+}
+function mqGateUI(){
+  const g = $('mq-gate').value, two = g === 'cnot' || g === 'cz';
+  $('mq-tgrp').hidden = !two; $('mq-angrp').hidden = !(g === 'phase' || g === 'ry');
+  $('mq-q-l').textContent = g === 'cnot' ? 'control' : (two ? 'first qubit' : 'qubit');
+}
+function mqStartFromForm(){
+  MQ.n = +$('mq-n').value;
+  const v = $('mq-start').value;
+  $('mq-custom').hidden = v !== 'custom';
+  if(v === 'custom'){
+    const a = parseFloat($('mq-a').value), b = parseFloat($('mq-b').value);
+    if(!isFinite(a) || !isFinite(b) || (a === 0 && b === 0)){ $('mq-hint').textContent = 'Give at least one non-zero amount.'; return false; }
+    MQ.custom = [a, b]; MQ.start = 0;
+  } else { MQ.custom = null; MQ.start = +v; }
+  return true;
+}
+function mqLoad(L){
+  $('mq-n').value = String(L.n); mqFillSelects(); $('mq-start').value = String(L.start); $('mq-custom').hidden = true;
+  MQ = {n:L.n, start:L.start, custom:null, steps:L.steps.map(s => Object.assign({}, s)), note:L.note, k:0};
+  [...$('mq-lessons').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.key === L.key)));
+  $('mq-hint').textContent = 'Lesson loaded. Step through it, or change it: anything you add goes on the end.';
+  mqRender();
+}
+LESSONS.forEach(L => {const b = document.createElement('button'); b.type='button'; b.textContent = L.title; b.dataset.key = L.key;
+  b.onclick = () => mqLoad(L); $('mq-lessons').appendChild(b)});
+function mqMine(){ MQ.note = ''; [...$('mq-lessons').children].forEach(b => b.setAttribute('aria-pressed', 'false')); }
+$('mq-n').onchange = () => {mqFillSelects(); mqMine(); MQ.steps = []; MQ.k = 0; mqStartFromForm(); $('mq-hint').textContent = 'New start. Add a step.'; mqRender()};
+$('mq-start').onchange = () => {mqMine(); if(mqStartFromForm()){ MQ.k = 0; mqRender(); }};
+['mq-a','mq-b'].forEach(id => { $(id).oninput = () => {mqMine(); if(mqStartFromForm()){ MQ.k = 0; mqRender(); }}; });
+$('mq-gate').onchange = mqGateUI;
+$('mq-q').onchange = () => {const n = MQ.n; if(n > 1 && $('mq-t').value === $('mq-q').value) $('mq-t').value = String((+$('mq-q').value + 1) % n)};
+$('mq-add').onclick = () => {
+  if(MQ.steps.length >= 16){ $('mq-hint').textContent = 'That is the limit, 16 steps. Undo one first.'; return; }
+  const op = $('mq-gate').value, q = +$('mq-q').value, st = {op, q};
+  if(op === 'cnot' || op === 'cz'){
+    if(MQ.n < 2){ $('mq-hint').textContent = 'Two-qubit gates need at least 2 qubits.'; return; }
+    st.t = +$('mq-t').value;
+    if(st.t === q){ $('mq-hint').textContent = 'Pick two different qubits.'; return; }
+  }
+  if(op === 'phase' || op === 'ry'){
+    const deg = parseFloat($('mq-ang').value);
+    if(!isFinite(deg)){ $('mq-hint').textContent = 'Type an angle in degrees, for example 90.'; return; }
+    st.deg = deg;
+  }
+  mqMine(); MQ.steps.push(st); MQ.k = MQ.steps.length;
+  $('mq-hint').textContent = 'Added ' + stepName(st) + '.'; mqRender();
+};
+$('mq-undo').onclick = () => {MQ.steps.pop(); MQ.k = Math.min(MQ.k, MQ.steps.length); mqMine(); mqRender()};
+$('mq-clear').onclick = () => {MQ.steps = []; MQ.k = 0; mqMine(); $('mq-hint').textContent = 'Cleared. The start is unchanged.'; mqRender()};
+$('mq-prev').onclick = () => {if(MQ.k > 0){MQ.k--; mqRender()}};
+$('mq-next').onclick = () => {if(MQ.k < MQ.steps.length){MQ.k++; mqRender()}};
+/* Self-check on load: every lesson by hand vs engine, plus proof the check can fail. */
+(function mqSelfCheck(){
+  let steps = 0, worst = 0;
+  const saved = MQ;
+  LESSONS.forEach(L => {
+    MQ = {n:L.n, start:L.start, custom:null, steps:L.steps, note:'', k:0};
+    const r = runAll();
+    for(let i=1;i<r.hand.length;i++){ worst = Math.max(worst, dist(r.hand[i], r.engine[i])); steps++; }
+  });
+  MQ = {n:1, start:0, custom:null, steps:[{op:'h',q:0}], note:'', k:0};
+  const good = runAll(), broken = good.engine[1].map((a,i) => i === 1 ? C.neg(a) : a);
+  const caught = dist(good.hand[1], broken) > 1e-3;
+  MQ = saved;
+  const ok = worst < EPS && caught;
+  window.__mqcheck = {steps, worst, caught, ok};
+  $('mq-selfcheck').innerHTML = ok ?
+    'On load: hand maths vs engine <b>agree</b> on all ' + steps + ' lesson steps (largest difference ' + worst.toExponential(1) + '), and a deliberately wrong step is caught.' :
+    '<span class="bad">On load the self-check failed</span> (difference ' + worst.toExponential(2) + ', wrong step caught: ' + caught + ').';
+})();
+mqFillSelects(); mqGateUI(); mqLoad(LESSONS[0]);
+choose(QDATA[0]);
+
+/* ---- tabs (#qubits / #waves) ---- */
+function show(){
+  const q = location.hash === '#qubits';
+  $('v-qubits').hidden = !q; $('v-waves').hidden = q;
+  $('t-waves').setAttribute('aria-pressed', String(!q)); $('t-qubits').setAttribute('aria-pressed', String(q));
+  if(!q && typeof all === 'function') all();
+  if(q) stop();
+}
+$('t-waves').onclick = () => {location.hash = 'waves'};
+$('t-qubits').onclick = () => {location.hash = 'qubits'};
+addEventListener('hashchange', show);
+show();
+})();
+</script>

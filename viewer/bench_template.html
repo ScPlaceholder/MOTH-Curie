@@ -1,0 +1,1254 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Curie Wave Bench</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: an optics bench. One wide instrument (the interferometer) on top, two smaller instruments side by side below. */
+:root{
+  --bg:#f3f5f7; --panel:#ffffff; --ink:#15202b; --muted:#5b6876; --rule:#d9e0e6;
+  --beam:#0e7c86; --beam2:#c2611a; --radium:#1f9d55;
+  --f-display:"Space Grotesk",system-ui,sans-serif; --f-body:"Inter",system-ui,sans-serif; --f-data:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1419; --panel:#141e25; --ink:#e3ebf1; --muted:#8e9ca8; --rule:#24323c;
+  --beam:#4fd1c5; --beam2:#f0a35e; --radium:#6ee7a0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1419; --panel:#141e25; --ink:#e3ebf1; --muted:#8e9ca8; --rule:#24323c;
+  --beam:#4fd1c5; --beam2:#f0a35e; --radium:#6ee7a0; color-scheme:dark}
+:root.radium{--beam:var(--radium)}
+.marie{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 70%,transparent);padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.marie[hidden]{display:none}
+.marie-in{max-width:34rem;max-height:100%;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--radium);border-radius:10px;padding:20px 22px;box-shadow:0 0 40px color-mix(in srgb,var(--radium) 35%,transparent)}
+.marie-in h2{margin:0 0 10px;text-wrap:balance}.marie-in p{line-height:1.55;margin:0 0 10px}
+.marie-in table{border-collapse:collapse;margin:4px 0 12px;font-family:"JetBrains Mono",monospace;font-size:13px}.marie-in td{padding:2px 12px 2px 0;vertical-align:top}
+.marie-in blockquote{margin:12px 0;padding-left:12px;border-left:3px solid var(--radium);font-style:italic}
+.marie-in cite{display:block;font-style:normal;color:var(--muted);font-size:12px;margin-top:4px}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1040px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:22px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--f-data);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,5vw,40px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:var(--f-display);font-weight:500;font-size:20px;margin:0}
+p{margin:0;max-width:65ch;color:var(--muted)}
+.lede{color:var(--ink)}
+.bench{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:18px;display:grid;gap:14px;min-width:0}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+@media (max-width:760px){.row{grid-template-columns:1fr}}
+canvas{width:100%;height:auto;display:block;max-width:100%}
+.ctl{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-family:var(--f-data);font-size:13px}
+.ctl label{color:var(--muted)}
+input[type=range]{flex:1 1 220px;accent-color:var(--beam);min-width:0}
+button,select{font:inherit;font-family:var(--f-data);font-size:13px;background:transparent;color:var(--ink);border:1px solid var(--rule);border-radius:6px;padding:6px 12px;cursor:pointer}
+button:hover,select:hover{border-color:var(--beam)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--beam);outline-offset:2px}
+.readout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;font-family:var(--f-data);font-variant-numeric:tabular-nums}
+.readout div{border-top:1px solid var(--rule);padding-top:8px;min-width:0}
+.readout b{display:block;font-size:22px;font-weight:600}
+.readout span{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.d1 b{color:var(--beam)} .d2 b{color:var(--beam2)}
+.order{display:grid;gap:10px;font-family:var(--f-data);font-size:14px;font-variant-numeric:tabular-nums}
+.order .line{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--rule);padding-top:8px;flex-wrap:wrap}
+.order em{font-style:normal;color:var(--muted)}
+footer{font-family:var(--f-data);font-size:12px;color:var(--muted)}
+/* Qubit tab */
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--rule);padding-bottom:10px;flex-wrap:wrap;align-items:center}
+.brand{display:inline-flex;align-items:center;gap:8px;margin-right:8px;font:600 12px/1 var(--f-data, monospace);letter-spacing:.12em;color:var(--muted);text-decoration:none}
+.brand img{width:46px;height:46px;border-radius:50%;display:block;box-shadow:0 0 0 1px var(--rule)}
+.tabs button{border-radius:999px;padding:7px 16px}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.qpick{display:flex;gap:8px;flex-wrap:wrap}
+.qpick button[aria-pressed="true"]{border-color:var(--beam);color:var(--beam);font-weight:600}
+.strip{display:flex;gap:6px;flex-wrap:wrap;font-family:var(--f-data);font-size:13px}
+.strip button{padding:5px 9px}
+.strip button.now{background:var(--beam);border-color:var(--beam);color:var(--panel)}
+.strip button.done{border-color:var(--beam)}
+.cap{color:var(--ink);min-height:3.2em;max-width:65ch}
+.amps{display:grid;gap:8px}
+.amp{display:grid;grid-template-columns:3.2em 1fr 3.6em 30px;gap:10px;align-items:center;font-family:var(--f-data);font-variant-numeric:tabular-nums;font-size:14px}
+.amp .lab{color:var(--muted);letter-spacing:.08em}
+.amp .track{height:18px;background:var(--rule);border-radius:4px;overflow:hidden;min-width:0}
+.amp .fill{display:block;height:100%;background:var(--beam);width:0;transition:width .35s ease}
+.amp .pct{text-align:right}
+.amp svg{display:block}
+.nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-family:var(--f-data);font-size:13px}
+.nav button{min-width:64px}
+.check{font-family:var(--f-data);font-size:12px;color:var(--muted);border-top:1px solid var(--rule);padding-top:8px}
+.check b{color:var(--beam)} .check .bad{color:var(--beam2)}
+.build{display:grid;gap:10px}
+.pal{display:flex;gap:6px;flex-wrap:wrap}
+.pal button{min-width:52px}
+.pal button.arm{background:var(--beam2);border-color:var(--beam2);color:var(--panel)}
+.hint{font-family:var(--f-data);font-size:12px;color:var(--muted);min-height:1.4em}
+/* The maths, step by step */
+.mq-form{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;font-family:var(--f-data);font-size:13px}
+.mq-form label{color:var(--muted)}
+.mq-form input[type=number]{font:inherit;width:6.5em;background:transparent;color:var(--ink);border:1px solid var(--rule);border-radius:6px;padding:6px 8px}
+.mq-form .grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.mq-form .grp[hidden]{display:none}
+.wm .mq-lines{overflow-x:visible}
+.own{border-top:1px dashed var(--rule);padding-top:10px;margin-top:6px;flex-wrap:wrap;gap:8px 14px}
+.own b{font-weight:500;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.own label{display:inline-flex;align-items:center;gap:4px}
+.own input[type=number]{width:5.5em}
+.spec-ctl{display:grid;grid-template-columns:auto auto 1fr auto;gap:6px 8px;align-items:center}
+.spec-ctl input[type=range]{width:100%;min-width:0}
+.wm .mq-line code{white-space:pre-wrap;overflow-wrap:anywhere}
+.mq-sub{font-family:var(--f-data);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0}
+.mq-step{display:grid;gap:12px;border-top:1px solid var(--rule);padding-top:12px;min-width:0}
+.mq-title{font-family:var(--f-display);font-weight:500;font-size:17px;color:var(--ink);margin:0}
+.mq-why{color:var(--muted);max-width:65ch}
+.mq-mat{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--f-data);font-size:14px;font-variant-numeric:tabular-nums}
+.mq-mat .grid{display:grid;grid-template-columns:auto auto;gap:4px 18px;padding:4px 12px;border-left:2px solid var(--ink);border-right:2px solid var(--ink);border-radius:4px}
+.mq-mat .grid span{text-align:right}
+.mq-lines{display:grid;gap:8px;font-family:var(--f-data);font-size:13.5px;font-variant-numeric:tabular-nums;overflow-x:auto;min-width:0}
+.mq-line{display:grid;gap:3px;min-width:0}
+.mq-line code{font:inherit;white-space:nowrap}
+.tag{justify-self:start;font-size:11.5px;letter-spacing:.04em;border-radius:999px;padding:2px 9px;border:1px solid var(--rule);color:var(--muted)}
+.tag.add{border-color:var(--beam);color:var(--beam)}
+.tag.cancel{border-color:var(--beam2);color:var(--beam2)}
+.mq-tablebox{overflow-x:auto;min-width:0}
+.mq-table{border-collapse:collapse;font-family:var(--f-data);font-size:13px;font-variant-numeric:tabular-nums;min-width:100%}
+.mq-table th,.mq-table td{text-align:right;padding:5px 10px;border-bottom:1px solid var(--rule);white-space:nowrap}
+.mq-table th{font-weight:400;color:var(--muted);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase}
+.mq-table th:first-child,.mq-table td:first-child{text-align:left}
+.mq-table tr.zero td{color:var(--muted)}
+.mq-ok{font-family:var(--f-data);font-size:12.5px;color:var(--muted)}
+.mq-ok b{color:var(--beam)} .mq-ok .bad{color:var(--beam2);font-weight:600}
+@media (prefers-reduced-motion: reduce){.amp .fill{transition:none}}
+</style>
+<div class="wrap">
+<nav class="tabs" aria-label="Bench"><span class="brand"><img src="data:image/jpeg;base64,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" alt="MOTH logo: a moth over an EM monogram" width="46" height="46">MOTH</span><button id="t-waves" type="button" aria-pressed="true">Waves</button><button id="t-qubits" type="button" aria-pressed="false">Qubits</button></nav>
+<div id="v-waves">
+<header>
+  <div class="eyebrow">Curie · RELA engine v2 · every frame computed by Curie</div>
+  <h1>The gnomes' interferometer</h1>
+  <p class="lede">In RELA, multiplying is easy: scale and turn. Adding is the hard part, because two waves don't stack, they interfere. Drag the phase and watch one detector go dark while the other takes all the light.</p>
+</header>
+
+<section class="bench" aria-labelledby="mzi-h">
+  <h2 id="mzi-h">Two paths, one tunable phase</h2>
+  <canvas id="mzi" width="1000" height="360" aria-label="Interferometer diagram"></canvas>
+  <div class="ctl">
+    <label for="phase">phase φ</label>
+    <input id="phase" type="range" min="0" max="360" step="1" value="120">
+    <span id="phaseval">120°</span>
+    <button id="sweep" type="button">Sweep</button>
+  </div>
+  <div class="ctl own"><b>your numbers</b><label>φ° <input id="mz-phi" type="number" step="any" value="120"></label><label>path 1 <input id="mz-a" type="number" step="0.05" min="0" max="1" value="0.5"></label><label>path 2 <input id="mz-b" type="number" step="0.05" min="0" max="1" value="0.5"></label></div>
+  <div class="readout">
+    <div class="d1"><span>Detector 1</span><b id="r1">0.250</b></div>
+    <div class="d2"><span>Detector 2</span><b id="r2">0.750</b></div>
+    <div><span>Total light</span><b id="rt">1.000</b></div>
+  </div>
+  <p>The arrows beside each detector are the two paths' contributions, laid tip to tail. Their sum is the amplitude that arrives, and its length squared is the light you see. Theory says detector 1 reads cos²(φ/2).</p>
+  <div class="mq-step wm" id="wm-mzi" aria-live="polite"></div>
+</section>
+
+<div class="row">
+<section class="bench" aria-labelledby="ring-h">
+  <h2 id="ring-h">A pulse walking a ring</h2>
+  <canvas id="ring" width="480" height="420" aria-label="Ring of event nodes"></canvas>
+  <div class="ctl">
+    <label for="nodes">nodes</label>
+    <select id="nodes"><option>4</option><option selected>6</option><option>8</option></select>
+    <button id="play" type="button">Play</button>
+    <button id="step" type="button">Step</button>
+    <span id="stepval">step 0</span>
+  </div>
+  <div class="ctl own"><b>your numbers</b><label>nodes <input id="rg-n" type="number" min="2" max="24" step="1" value="6"></label><label>turn per hop° <input id="rg-turn" type="number" step="any" placeholder="360/n"></label><label>start length <input id="rg-r" type="number" step="0.1" min="0" value="1"></label><label>start angle° <input id="rg-t" type="number" step="any" value="0"></label></div>
+  <p>Each hop turns the phase by one nth of a circle; the hand on each node shows its phase. After n hops of one nth of a circle, the pulse is home at its starting amplitude. Try a turn that is not a whole fraction of a circle and it overshoots.</p>
+  <div class="mq-step wm" id="wm-ring" aria-live="polite"></div>
+</section>
+
+<section class="bench" aria-labelledby="ord-h">
+  <h2 id="ord-h">Order matters</h2>
+  <p>Start at 1∠0 and apply two moves, rotate by π/2 and conjugate (flip the phase), in each order. Then interfere each result with 1∠π/2.</p>
+  <div class="ctl own"><b>your numbers</b><label>start <input id="od-r" type="number" step="0.1" value="1">∠<input id="od-t" type="number" step="any" value="0">°</label><label>rotate by <input id="od-a" type="number" step="any" value="90">°</label><label>interfere with <input id="od-wr" type="number" step="0.1" value="1">∠<input id="od-wt" type="number" step="any" value="90">°</label></div>
+  <div class="order" id="order"></div>
+  <p>With the starting numbers: same two moves, opposite outcomes. Rotations alone commute; the flip is what makes order visible, except when the rotation is a half turn.</p>
+  <div class="mq-step wm" id="wm-order" aria-live="polite"></div>
+</section>
+</div>
+
+<div class="row">
+<section class="bench" aria-labelledby="roots-h">
+  <h2 id="roots-h">Every root, not just one</h2>
+  <canvas id="roots" width="480" height="420" aria-label="Roots on the circle"></canvas>
+  <div class="ctl">
+    <label for="rootn">n</label>
+    <input id="rootn" type="range" min="2" max="12" step="1" value="6">
+    <span id="rootnval">6</span>
+    <label for="rootof">of</label>
+    <select id="rootof"><option value="one">1∠0</option><option value="z">1.6∠1.1</option><option value="own">your own</option></select>
+  </div>
+  <div class="ctl own"><b>your numbers</b><label>roots of <input id="rt-r" type="number" step="0.1" min="0.01" value="2">∠<input id="rt-t" type="number" step="any" value="45">°</label></div>
+  <p id="rootnote">To the gnomes the nth root is n things, spaced evenly round the circle. Interfere all the roots of 1 together and they cancel to nothing.</p>
+  <div class="mq-step wm" id="wm-roots" aria-live="polite"></div>
+</section>
+
+<section class="bench" aria-labelledby="spec-h">
+  <h2 id="spec-h">Hearing by interference</h2>
+  <canvas id="spec" width="480" height="420" aria-label="Signal and its spectrum"></canvas>
+  <div class="ctl spec-ctl" id="specctl"></div>
+  <div class="ctl"><button id="specreset" type="button">Curie's three tones</button><span id="specsrc">Curie's own run</span></div>
+  <p>Set each tone: how many cycles it makes across the 32 samples, and how loud it is. Top: the signal they add up to. Bottom: what Curie hears when it sums rotating arrows against it. Each tone shows up twice, at its bin and its mirror, and everything else cancels to zero.</p>
+  <div class="mq-step wm" id="wm-spec" aria-live="polite"></div>
+</section>
+</div>
+
+<section class="bench" aria-labelledby="click-h">
+  <h2 id="click-h">The detector clicks</h2>
+  <canvas id="clicks" width="1000" height="200" aria-label="Measurement clicks"></canvas>
+  <div class="ctl">
+    <label for="clickphase">phase φ</label>
+    <select id="clickphase"><option>0</option><option>30</option><option>60</option><option selected>90</option><option>120</option><option>150</option><option>180</option></select>
+    <button id="fire" type="button">Fire 200 photons</button>
+    <span id="clickcount">detector 1: 0 · detector 2: 0</span>
+  </div>
+  <div class="ctl own"><b>your numbers</b><label>φ° <input id="ck-phi" type="number" step="any" value="90"></label><label>seed <input id="ck-seed" type="number" step="1" placeholder="Curie's"></label></div>
+  <p>Each photon lands on one detector or the other; only the odds come from the waves. The tally drifts toward theory, cos² and sin² of φ/2, but never matches it exactly, because these are real draws, seeded and recorded by Curie.</p>
+  <div class="mq-step wm" id="wm-clicks" aria-live="polite"></div>
+</section>
+
+</div>
+<div id="v-qubits" hidden>
+<header>
+  <div class="eyebrow">Curie · quantum sandbox · every preset step computed by Curie</div>
+  <h1>Watch a qubit think</h1>
+  <p class="lede">Pick a circuit and tap through it one gate at a time. The bars are the odds of each answer if you looked right now. The little hands are the wave underneath: paths whose hands point opposite ways cancel when they meet.</p>
+</header>
+
+<section class="bench" aria-labelledby="qv-h">
+  <h2 id="qv-h">Circuits</h2>
+  <div class="qpick" id="qpick" role="group" aria-label="Choose a circuit"></div>
+  <div class="strip" id="strip" aria-label="Gates in order; tap one to jump there"></div>
+  <p class="cap" id="cap" aria-live="polite"></p>
+  <div class="amps" id="amps"></div>
+  <div class="mq-step" id="qmath" aria-live="polite"></div>
+  <div class="nav">
+    <button id="qprev" type="button">Back</button>
+    <button id="qnext" type="button">Next</button>
+    <button id="qplay" type="button">Play</button>
+    <span id="qpos"></span>
+  </div>
+  <div class="check" id="check"></div>
+</section>
+
+<section class="bench build" aria-labelledby="qb-h">
+  <h2 id="qb-h">Build your own</h2>
+  <div class="ctl">
+    <label for="qn">qubits</label>
+    <select id="qn"><option>1</option><option selected>2</option><option>3</option></select>
+    <button id="qundo" type="button">Undo</button>
+    <button id="qclear" type="button">Clear</button>
+    <button id="qshow" type="button">Step through it</button>
+  </div>
+  <div class="pal" id="pal" role="group" aria-label="Gates"></div>
+  <div class="pal" id="qsel" role="group" aria-label="Qubits"></div>
+  <p class="hint" id="hint">Tap a gate, then the qubit it acts on.</p>
+  <div class="strip" id="mine" aria-label="Your circuit"></div>
+  <p>Your circuits run on a small engine in your phone's browser, the same rules as Curie. It is checked against every Curie step above each time this page opens; the line under the circuits says how closely they agree.</p>
+</section>
+
+<section class="bench" aria-labelledby="mq-h">
+  <h2 id="mq-h">The maths, step by step</h2>
+  <p>Every step written out as it runs: the gate's matrix, the sum for each amplitude, and whether the two paths reinforce or cancel. Pick a lesson, or set your own start and add gates with your own values.</p>
+  <div class="qpick" id="mq-lessons" role="group" aria-label="Lessons"></div>
+
+  <p class="mq-sub">Start</p>
+  <div class="mq-form">
+    <label for="mq-n">qubits</label>
+    <select id="mq-n"><option>1</option><option selected>2</option><option>3</option></select>
+    <label for="mq-start">start in</label>
+    <select id="mq-start"></select>
+    <span class="grp" id="mq-custom" hidden>
+      <label for="mq-a">amount of |0⟩</label><input id="mq-a" type="number" step="0.1" value="1">
+      <label for="mq-b">amount of |1⟩</label><input id="mq-b" type="number" step="0.1" value="1">
+    </span>
+  </div>
+
+  <p class="mq-sub">Add a step</p>
+  <div class="mq-form">
+    <label for="mq-gate">gate</label>
+    <select id="mq-gate">
+      <option value="h">H (split or rejoin)</option>
+      <option value="x">X (swap 0 and 1)</option>
+      <option value="z">Z (flip the 1-path)</option>
+      <option value="phase">Phase (turn the 1-path)</option>
+      <option value="ry">Ry (rotate)</option>
+      <option value="cnot">CNOT (controlled swap)</option>
+      <option value="cz">CZ (controlled flip)</option>
+    </select>
+    <label for="mq-q" id="mq-q-l">qubit</label>
+    <select id="mq-q"></select>
+    <span class="grp" id="mq-tgrp" hidden><label for="mq-t">target</label><select id="mq-t"></select></span>
+    <span class="grp" id="mq-angrp" hidden><label for="mq-ang">angle (degrees)</label><input id="mq-ang" type="number" step="15" value="90"></span>
+    <button id="mq-add" type="button">Add step</button>
+    <button id="mq-undo" type="button">Undo</button>
+    <button id="mq-clear" type="button">Clear</button>
+  </div>
+  <p class="hint" id="mq-hint" aria-live="polite"></p>
+
+  <div class="strip" id="mq-strip" aria-label="Steps; tap one to see its maths"></div>
+  <div class="nav">
+    <button id="mq-prev" type="button">Back</button>
+    <button id="mq-next" type="button">Next</button>
+    <span id="mq-pos"></span>
+  </div>
+  <div class="mq-step" id="mq-step" aria-live="polite"></div>
+  <p class="mq-ok" id="mq-selfcheck"></p>
+</section>
+</div>
+<aside id="marie" class="marie" hidden role="dialog" aria-modal="true" aria-labelledby="marie-h">
+<div class="marie-in">
+  <h2 id="marie-h">Maria Skłodowska-Curie, 1867–1934</h2>
+  <p>Born in Warsaw, she left for Paris to study, because women could not enrol at a university at home. With Pierre Curie she found two new elements in tonnes of pitchblende, and named the first polonium, after a country that was not then on any map.</p>
+  <table><tr><td>1903</td><td>Nobel Prize in Physics, with Pierre Curie and Henri Becquerel, for the study of radioactivity</td></tr>
+  <tr><td>1911</td><td>Nobel Prize in Chemistry, for the discovery of polonium and radium</td></tr></table>
+  <p>The first woman to win a Nobel Prize, and still the only person to win one in two different sciences. Her notebooks are still radioactive; the library that keeps them stores them in lead-lined boxes.</p>
+  <p>She looked at something nobody could see and measured it until it could not be argued with. That is what this little microscope tries to do with amplitudes. While this card is open, the waves glow radium green.</p>
+  <blockquote>Nothing in life is to be feared, it is only to be understood.<cite>attributed to Marie Curie</cite></blockquote>
+  <button id="marie-x" type="button">Close</button>
+</div>
+</aside>
+<footer>MOTH Curie · by SC Placeholder and Elah. Wave frames and every preset circuit step were computed by the Python engine and embedded here; the page draws them, and runs only your own circuits itself.</footer>
+</div>
+
+<script>
+const DATA = __DATA__;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const mz = document.getElementById('mzi'), mx = mz.getContext('2d');
+const slider = document.getElementById('phase');
+function ownNum(id, dflt){const v=parseFloat(document.getElementById(id).value); return Number.isFinite(v)?v:dflt}
+const MZ={phi:120,a:.5,b:.5};
+function mzCurie(){return Number.isInteger(MZ.phi)&&MZ.phi>=0&&MZ.phi<=360&&MZ.a===.5&&MZ.b===.5}
+function polar(r,t){return [r*Math.cos(t), r*Math.sin(t)]}
+function arrow(ctx,x0,y0,x1,y1,col,w){
+  ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();
+  if(Math.hypot(x1-x0,y1-y0)<3)return;
+  const a=Math.atan2(y1-y0,x1-x0),h=9;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1-h*Math.cos(a-.4),y1-h*Math.sin(a-.4));ctx.lineTo(x1-h*Math.cos(a+.4),y1-h*Math.sin(a+.4));ctx.closePath();ctx.fill();
+}
+function drawMZI(deg){
+  MZ.phi=deg; const phi=deg*Math.PI/180; let I1, I2;
+  if(mzCurie()){const f=DATA.mzi[deg]; I1=f[1]; I2=f[2];}
+  else {const A=MZ.a, B=MZ.b; I1=A*A+B*B+2*A*B*Math.cos(phi); I2=A*A+B*B-2*A*B*Math.cos(phi);}
+  const box=document.getElementById('mz-phi'); if(box&&document.activeElement!==box) box.value=+deg.toFixed(4);
+  const W=mz.width,H=mz.height, ink=css('--ink'), mut=css('--muted'), rule=css('--rule'), b1=css('--beam'), b2=css('--beam2'), pan=css('--panel');
+  mx.clearRect(0,0,W,H); mx.font='15px "JetBrains Mono", monospace'; mx.textAlign='center';
+  const S=[60,180], BS1=[200,180], MA=[200,60], MB=[520,180], BS2=[520,60], D1=[650,60], D2=[520,300];
+  mx.lineWidth=5; mx.lineCap='round';
+  const beam=(p,q,a,col)=>{mx.globalAlpha=a;mx.strokeStyle=col;mx.beginPath();mx.moveTo(p[0],p[1]);mx.lineTo(q[0],q[1]);mx.stroke();mx.globalAlpha=1};
+  beam(S,BS1,.9,b1); beam(BS1,MA,.55,b1); beam(MA,BS2,.55,b1); beam(BS1,MB,.55,b1); beam(MB,BS2,.55,b1);
+  beam(BS2,D1,Math.min(1,.15+.85*I1),b1); beam(BS2,[D2[0],D2[1]-18],Math.min(1,.15+.85*I2),b2);
+  const plate=(p,label,below)=>{mx.save();mx.translate(p[0],p[1]);mx.rotate(-Math.PI/4);mx.fillStyle=rule;mx.fillRect(-26,-4,52,8);mx.restore();mx.fillStyle=mut;mx.fillText(label,p[0],p[1]+(below?34:-22))};
+  plate(BS1,'split',true); plate(BS2,'recombine',false); plate(MA,'mirror',false); plate(MB,'mirror',true);
+  mx.fillStyle=b2; mx.globalAlpha=.2+.6*(deg/360); mx.fillRect(345,160,40,40); mx.globalAlpha=1;
+  mx.fillStyle=ink; mx.fillText('φ = '+deg+'°',365,230);
+  mx.fillStyle=ink; mx.beginPath(); mx.arc(S[0],S[1],10,0,7); mx.fill(); mx.fillStyle=mut; mx.fillText('source',S[0],S[1]+34);
+  const det=(p,I,col,name,below)=>{const g=mx.createRadialGradient(p[0],p[1],2,p[0],p[1],46);g.addColorStop(0,col);g.addColorStop(1,pan);
+    mx.globalAlpha=Math.min(1,Math.max(.06,I));mx.fillStyle=g;mx.beginPath();mx.arc(p[0],p[1],46,0,7);mx.fill();mx.globalAlpha=1;
+    mx.strokeStyle=col;mx.lineWidth=2;mx.beginPath();mx.arc(p[0],p[1],16,0,7);mx.stroke();mx.fillStyle=ink;mx.fillText(name,p[0],p[1]+(below?40:-26))};
+  det(D1,I1,b1,'D1',false); det(D2,I2,b2,'D2',true);
+  const panel=(ox,oy,c1,c2,col,label)=>{
+    const s=70; mx.strokeStyle=rule; mx.lineWidth=1; mx.beginPath(); mx.arc(ox,oy,s,0,7); mx.stroke();
+    mx.beginPath();mx.moveTo(ox-s,oy);mx.lineTo(ox+s,oy);mx.moveTo(ox,oy-s);mx.lineTo(ox,oy+s);mx.stroke();
+    const a=polar(c1[0],c1[1]), b=polar(c2[0],c2[1]);
+    const p1=[ox+a[0]*s, oy-a[1]*s], p2=[p1[0]+b[0]*s, p1[1]-b[1]*s];
+    arrow(mx,ox,oy,p1[0],p1[1],mut,2); arrow(mx,p1[0],p1[1],p2[0],p2[1],mut,2); arrow(mx,ox,oy,p2[0],p2[1],col,4);
+    mx.fillStyle=ink; mx.textAlign='left'; mx.fillText(label,ox-s,oy-s-10); mx.textAlign='center';
+  };
+  panel(880,100,[MZ.a,Math.PI/2],[MZ.b,Math.PI/2+phi],b1,'D1 arrows');
+  panel(880,270,[MZ.a,0],[MZ.b,phi+Math.PI],b2,'D2 arrows');
+  document.getElementById('r1').textContent=I1.toFixed(3);
+  document.getElementById('r2').textContent=I2.toFixed(3);
+  document.getElementById('rt').textContent=(I1+I2).toFixed(3);
+  document.getElementById('phaseval').textContent=(+deg.toFixed(2))+'°';
+  wmMZI(deg);
+}
+slider.addEventListener('input',()=>drawMZI(+slider.value));
+document.getElementById('mz-phi').addEventListener('input',()=>{const v=ownNum('mz-phi',MZ.phi); slider.value=((Math.round(v)%360)+360)%360; drawMZI(v)});
+['mz-a','mz-b'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{MZ.a=Math.min(1,Math.max(0,ownNum('mz-a',.5))); MZ.b=Math.min(1,Math.max(0,ownNum('mz-b',.5))); drawMZI(MZ.phi)}));
+let sweeping=null;
+document.getElementById('sweep').addEventListener('click',e=>{
+  if(sweeping){cancelAnimationFrame(sweeping);sweeping=null;e.target.textContent='Sweep';return}
+  if(reduce){slider.value=(+slider.value+45)%361;drawMZI(+slider.value);return}
+  e.target.textContent='Stop';
+  const tick=()=>{slider.value=(+slider.value+1)%361;drawMZI(+slider.value);sweeping=requestAnimationFrame(tick)};tick();
+});
+
+const rc=document.getElementById('ring'), rx=rc.getContext('2d'); let rn='6', rs=0, rtimer=null;
+const RG={n:6, turn:null, r0:1, t0:0};
+function ringCurie(){return ['4','6','8'].includes(String(RG.n))&&RG.turn===null&&RG.r0===1&&RG.t0===0}
+function turnRad(){return RG.turn===null?2*Math.PI/RG.n:RG.turn*Math.PI/180}
+function ringLen(){return ringCurie()?DATA.rings[String(RG.n)].length:4*RG.n+1}
+function wrapA(t){return Math.atan2(Math.sin(t),Math.cos(t))}
+function ringFrame(){
+  if(ringCurie()){const fr=DATA.rings[String(RG.n)]; return fr[rs%fr.length]}
+  const f=[]; for(let i=0;i<RG.n;i++) f.push([0,0]);
+  f[rs%RG.n]=[RG.r0, wrapA(RG.t0*Math.PI/180+rs*turnRad())]; return f;
+}
+function drawRing(){
+  const f=ringFrame(), n=f.length, W=rc.width,H=rc.height, cx=W/2, cy=H/2, R=150;
+  const ink=css('--ink'), mut=css('--muted'), rule=css('--rule'), b1=css('--beam'), pan=css('--panel');
+  rx.clearRect(0,0,W,H); rx.strokeStyle=rule; rx.lineWidth=2; rx.beginPath(); rx.arc(cx,cy,R,0,7); rx.stroke();
+  rx.font='14px "JetBrains Mono", monospace'; rx.textAlign='center';
+  for(let i=0;i<n;i++){
+    const a=-Math.PI/2+i*2*Math.PI/n, x=cx+R*Math.cos(a), y=cy+R*Math.sin(a), r=f[i][0], t=f[i][1], I=r*r;
+    const g=rx.createRadialGradient(x,y,2,x,y,44); g.addColorStop(0,b1); g.addColorStop(1,pan);
+    rx.globalAlpha=Math.min(1,Math.max(.05,I)); rx.fillStyle=g; rx.beginPath(); rx.arc(x,y,44,0,7); rx.fill(); rx.globalAlpha=1;
+    rx.fillStyle=pan; rx.strokeStyle=I>.5?b1:rule; rx.lineWidth=2; rx.beginPath(); rx.arc(x,y,20,0,7); rx.fill(); rx.stroke();
+    if(I>1e-6){rx.strokeStyle=ink; rx.lineWidth=3; rx.beginPath(); rx.moveTo(x,y); rx.lineTo(x+16*Math.cos(-t),y+16*Math.sin(-t)); rx.stroke();}
+    rx.fillStyle=mut; rx.fillText(String(i), cx+(R-46)*Math.cos(a), cy+(R-46)*Math.sin(a)+5);
+  }
+  const live=f.findIndex(v=>v[0]>1e-9);
+  rx.fillStyle=ink; rx.fillText(live>=0?('node '+live+': '+f[live][0].toFixed(3)+'∠'+f[live][1].toFixed(3)):'', cx, cy+5);
+  document.getElementById('stepval').textContent='step '+rs;
+  wmRing();
+}
+document.getElementById('nodes').addEventListener('change',e=>{rn=e.target.value;RG.n=+rn;document.getElementById('rg-n').value=rn;rs=0;drawRing()});
+['rg-n','rg-turn','rg-r','rg-t'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{
+  RG.n=Math.min(24,Math.max(2,Math.round(ownNum('rg-n',6))));
+  const tv=document.getElementById('rg-turn').value.trim(); RG.turn=tv===''||!Number.isFinite(parseFloat(tv))?null:parseFloat(tv);
+  RG.r0=Math.max(0,ownNum('rg-r',1)); RG.t0=ownNum('rg-t',0);
+  if(['4','6','8'].includes(String(RG.n))){rn=String(RG.n); document.getElementById('nodes').value=rn}
+  rs=0; drawRing()}));
+document.getElementById('step').addEventListener('click',()=>{rs=(rs+1)%ringLen();drawRing()});
+document.getElementById('play').addEventListener('click',e=>{
+  if(rtimer){clearInterval(rtimer);rtimer=null;e.target.textContent='Play';return}
+  e.target.textContent='Pause'; rtimer=setInterval(()=>{rs=(rs+1)%ringLen();drawRing()}, reduce?1200:650);
+});
+
+const fmt=t=>{const k=t/(Math.PI/2), m={'0':'0','1':'π/2','-1':'−π/2','2':'π','-2':'−π'};return Math.abs(k-Math.round(k))<1e-9&&m[Math.round(k)]?m[Math.round(k)]:t.toFixed(3)};
+const OD={r:1,t:0,a:90,wr:1,wt:90};
+function odCurie(){return OD.r===1&&OD.t===0&&OD.a===90&&OD.wr===1&&OD.wt===90}
+function odResults(){
+  const d=Math.PI/180, rf=[OD.r, wrapA(-(OD.t+OD.a)*d)], fr=[OD.r, wrapA((-OD.t+OD.a)*d)], w=[OD.wr*Math.cos(OD.wt*d), OD.wr*Math.sin(OD.wt*d)];
+  const light=v=>{const x=v[0]*Math.cos(v[1])+w[0], y=v[0]*Math.sin(v[1])+w[1]; return x*x+y*y};
+  if(odCurie()) return {rf:DATA.order[0], fr:DATA.order[1]};
+  return {rf:[rf[0],rf[1],light(rf)], fr:[fr[0],fr[1],light(fr)]};
+}
+function renderOrder(){
+  const R=odResults();
+  document.getElementById('order').innerHTML=[['flip, then rotate',R.fr],['rotate, then flip',R.rf]]
+    .map(([n,v])=>'<div class="line"><span>'+n+'</span><span>'+v[0].toFixed(3)+'∠'+(odCurie()?fmt(v[1]):WM.deg(v[1]))+'</span><em>light '+(v[2]<1e-12?0:v[2]).toFixed(3)+'</em></div>').join('');
+  wmOrder();
+}
+['od-r','od-t','od-a','od-wr','od-wt'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{
+  OD.r=ownNum('od-r',1); OD.t=ownNum('od-t',0); OD.a=ownNum('od-a',90); OD.wr=ownNum('od-wr',1); OD.wt=ownNum('od-wt',90); renderOrder()}));
+
+const roc=document.getElementById('roots'), ro=roc.getContext('2d');
+const rootn=document.getElementById('rootn'), rootof=document.getElementById('rootof');
+const RT={r:2,t:45};
+function rootsOwn(n){const out=[], len=Math.pow(RT.r,1/n); for(let k=0;k<n;k++) out.push([len, wrapA((RT.t*Math.PI/180+2*Math.PI*k)/n)]); return out}
+['rt-r','rt-t'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{RT.r=Math.max(0.01,ownNum('rt-r',2)); RT.t=ownNum('rt-t',45); rootof.value='own'; rootn.max=12; drawRoots()}));
+function drawRoots(){
+  const n=rootn.value, W=roc.width,H=roc.height,cx=W/2,cy=H/2,ink=css('--ink'),mut=css('--muted'),rule=css('--rule'),b1=css('--beam'),b2=css('--beam2');
+  ro.clearRect(0,0,W,H); ro.font='14px "JetBrains Mono", monospace'; ro.textAlign='center';
+  const pts=rootof.value==='own'?rootsOwn(+n):((rootof.value==='one'||!DATA.roots.z.by_n[n])?DATA.roots[n].pts:DATA.roots.z.by_n[n]);
+  const scale=rootof.value==='one'?150:150/Math.max(...pts.map(p=>p[0]));
+  ro.strokeStyle=rule; ro.lineWidth=1; ro.beginPath(); ro.arc(cx,cy,scale*pts[0][0],0,7); ro.stroke();
+  ro.beginPath(); ro.moveTo(cx-170,cy); ro.lineTo(cx+170,cy); ro.moveTo(cx,cy-170); ro.lineTo(cx,cy+170); ro.stroke();
+  pts.forEach((p,k)=>{const x=cx+scale*p[0]*Math.cos(p[1]), y=cy-scale*p[0]*Math.sin(p[1]);
+    ro.strokeStyle=b1; ro.lineWidth=2; ro.beginPath(); ro.moveTo(cx,cy); ro.lineTo(x,y); ro.stroke();
+    ro.fillStyle=b1; ro.beginPath(); ro.arc(x,y,7,0,7); ro.fill(); ro.fillStyle=mut; ro.fillText(String(k), cx+(scale*p[0]+22)*Math.cos(p[1]), cy-(scale*p[0]+22)*Math.sin(p[1])+5);});
+  document.getElementById('rootnval').textContent=n;
+  const note=document.getElementById('rootnote');
+  if(rootof.value==='one'){ro.fillStyle=ink; ro.fillText('sum of all '+n+' roots: '+DATA.roots[n].sum.toFixed(3), cx, H-12);
+    note.textContent='To the gnomes the nth root is n things, spaced evenly round the circle. Interfere all the roots of 1 together and they cancel to nothing.';}
+  else if(rootof.value==='own'){ro.fillStyle=ink; ro.fillText('each one raised to the '+n+'th gives '+RT.r+'∠'+RT.t+'°', cx, H-12);
+    note.textContent='The '+n+' roots of your number. Same rule: the nth root of the length, and the angle divided by n, then '+(360/n).toFixed(1)+'° apart.';}
+  else {ro.fillStyle=ink; ro.fillText('each one raised to the '+n+'th gives 1.6∠1.1', cx, H-12);
+    note.textContent='The '+n+' roots of 1.6∠1.1. Different lengths and angles from the roots of 1, but the same even spacing, '+(360/n).toFixed(1)+'° apart.';}
+  wmRoots();
+}
+rootn.addEventListener('input',drawRoots); rootof.addEventListener('change',()=>{if(+rootn.value>8&&rootof.value==='z'){rootn.value=8} rootn.max=rootof.value==='z'?8:12; drawRoots()});
+
+const spc=document.getElementById('spec'), sp=spc.getContext('2d');
+const SPEC_DEFAULT=[[3,1],[7,0.6],[12,0.25]], SPEC_N=DATA.spec.signal.length;
+let specTones=SPEC_DEFAULT.map(t=>t.slice());
+function specIsDefault(){return specTones.every((t,i)=>t[0]===SPEC_DEFAULT[i][0]&&Math.abs(t[1]-SPEC_DEFAULT[i][1])<1e-9)}
+function specSignal(){
+  if(specIsDefault()) return DATA.spec.signal;
+  const out=[]; for(let j=0;j<SPEC_N;j++){let v=0; for(const [k,a] of specTones) v+=a*Math.cos(2*Math.PI*k*j/SPEC_N); out.push(v)} return out;
+}
+function specPower(sig){
+  if(specIsDefault()) return DATA.spec.power;
+  const pw=[]; for(let k=0;k<SPEC_N;k++){let re=0,im=0; for(let j=0;j<SPEC_N;j++){const t=-2*Math.PI*j*k/SPEC_N; re+=sig[j]*Math.cos(t); im+=sig[j]*Math.sin(t)} pw.push(re*re+im*im)} return pw;
+}
+function specControls(){
+  const box=document.getElementById('specctl'); box.innerHTML='';
+  specTones.forEach((t,i)=>{
+    const lab=document.createElement('label'); lab.textContent='tone '+(i+1); lab.htmlFor='tf'+i;
+    const sel=document.createElement('select'); sel.id='tf'+i;
+    for(let k=1;k<SPEC_N/2;k++){const o=document.createElement('option'); o.value=k; o.textContent=k+' cycles'; if(k===t[0]) o.selected=true; sel.appendChild(o)}
+    const rng=document.createElement('input'); rng.type='range'; rng.min=0; rng.max=1; rng.step=0.05; rng.value=t[1]; rng.setAttribute('aria-label','tone '+(i+1)+' loudness');
+    const val=document.createElement('input'); val.type='number'; val.step='0.05'; val.min='0'; val.value=t[1]; val.setAttribute('aria-label','tone '+(i+1)+' loudness, typed'); val.style.width='4.5em';
+    sel.onchange=()=>{specTones[i][0]=+sel.value; drawSpec()};
+    rng.oninput=()=>{specTones[i][1]=+rng.value; val.value=rng.value; drawSpec()};
+    val.oninput=()=>{const v=parseFloat(val.value); if(Number.isFinite(v)&&v>=0){specTones[i][1]=v; rng.value=Math.min(1,v); drawSpec()}};
+    box.append(lab,sel,rng,val);
+  });
+}
+document.getElementById('specreset').addEventListener('click',()=>{specTones=SPEC_DEFAULT.map(t=>t.slice()); specControls(); drawSpec()});
+specControls();
+function drawSpec(){
+  const W=spc.width,H=spc.height,ink=css('--ink'),mut=css('--muted'),rule=css('--rule'),b1=css('--beam'),b2=css('--beam2');
+  const sig=specSignal(), pw=specPower(sig), N=sig.length, L=30, Rr=W-12, w=(Rr-L)/N;
+  document.getElementById('specsrc').textContent=specIsDefault()?'Curie\u2019s own run':'computed in your browser';
+  sp.clearRect(0,0,W,H); sp.font='12px "JetBrains Mono", monospace'; sp.textAlign='center';
+  const top=20, mid=120, amp=Math.max(1e-9,...sig.map(Math.abs));
+  sp.strokeStyle=rule; sp.lineWidth=1; sp.beginPath(); sp.moveTo(L,mid); sp.lineTo(Rr,mid); sp.stroke();
+  sp.strokeStyle=b2; sp.lineWidth=2; sp.beginPath(); sig.forEach((v,j)=>{const x=L+(j+.5)*w, y=mid-v/amp*80; j?sp.lineTo(x,y):sp.moveTo(x,y)}); sp.stroke();
+  sig.forEach((v,j)=>{sp.fillStyle=b2; sp.beginPath(); sp.arc(L+(j+.5)*w, mid-v/amp*80, 2.5,0,7); sp.fill()});
+  sp.fillStyle=mut; sp.textAlign='left'; sp.fillText('signal, 32 samples',L,top-6); sp.textAlign='center';
+  const base=H-34, maxp=Math.max(1e-9,...pw), hmax=150;
+  sp.strokeStyle=rule; sp.beginPath(); sp.moveTo(L,base); sp.lineTo(Rr,base); sp.stroke();
+  pw.forEach((p,k)=>{const h=p/maxp*hmax; sp.fillStyle=p>1e-6?b1:rule; sp.fillRect(L+k*w+1,base-h,w-2,Math.max(1,h)); if(p>1e-6){sp.fillStyle=ink; sp.fillText(String(k),L+(k+.5)*w,base+16)}});
+  sp.fillStyle=mut; sp.textAlign='left'; sp.fillText('spectrum: intensity per frequency bin',L,base-hmax-10); sp.textAlign='center';
+  wmSpec();
+}
+
+const clc=document.getElementById('clicks'), cl=clc.getContext('2d'); let fireT=null, shown=0;
+const CK={phi:90, seed:null};
+function ckCurie(){return [0,30,60,90,120,150,180].includes(CK.phi)&&CK.seed===null}
+function clickSeq(){
+  if(ckCurie()) return DATA.clicks[String(CK.phi)];
+  let a=(CK.seed===null?1:CK.seed)>>>0; const rnd=()=>{a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296};
+  const p=Math.cos(CK.phi*Math.PI/360)**2, out=[]; for(let i=0;i<200;i++) out.push(rnd()<p?1:2); return out;
+}
+function ckReset(){if(fireT){clearInterval(fireT);fireT=null;document.getElementById('fire').textContent='Fire 200 photons'} shown=0}
+['ck-phi','ck-seed'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{
+  CK.phi=ownNum('ck-phi',90); const sv=document.getElementById('ck-seed').value.trim(); CK.seed=sv===''||!Number.isFinite(parseFloat(sv))?null:Math.round(parseFloat(sv));
+  const sel=document.getElementById('clickphase'); if([...sel.options].some(o=>+o.value===CK.phi)) sel.value=String(CK.phi);
+  ckReset(); drawClicks()}));
+function drawClicks(){
+  const deg=CK.phi, seq=clickSeq(), W=clc.width,H=clc.height,ink=css('--ink'),mut=css('--muted'),rule=css('--rule'),b1=css('--beam'),b2=css('--beam2');
+  cl.clearRect(0,0,W,H); const cw=(W-20)/100;
+  let n1=0,n2=0;
+  for(let i=0;i<200;i++){const row=i<100?0:1, col=i%100, x=10+col*cw, y=30+row*60;
+    if(i<shown){const port=seq[i]; port===1?n1++:n2++; cl.fillStyle=port===1?b1:b2; cl.fillRect(x+1,y+(port===1?0:26),cw-2,22);}
+    else {cl.fillStyle=rule; cl.fillRect(x+cw/2-1,y+24,2,2);} }
+  const phi=deg*Math.PI/180, p1=Math.cos(phi/2)**2;
+  cl.font='13px "JetBrains Mono", monospace'; cl.fillStyle=mut; cl.textAlign='left';
+  cl.fillText('upper marks: detector 1 · lower marks: detector 2 · theory for detector 1: '+(p1*100).toFixed(1)+'%',10,H-12);
+  document.getElementById('clickcount').textContent='detector 1: '+n1+' · detector 2: '+n2+(shown?' ('+(n1/shown*100).toFixed(1)+'% vs '+(p1*100).toFixed(1)+'%)':'');
+  wmClicks();
+}
+document.getElementById('clickphase').addEventListener('change',e=>{CK.phi=+e.target.value; document.getElementById('ck-phi').value=CK.phi; ckReset(); drawClicks()});
+document.getElementById('fire').addEventListener('click',e=>{
+  if(fireT){clearInterval(fireT);fireT=null;e.target.textContent='Fire 200 photons';return}
+  if(shown>=200)shown=0;
+  if(reduce){shown=200;drawClicks();return}
+  e.target.textContent='Stop'; fireT=setInterval(()=>{shown=Math.min(200,shown+2);drawClicks(); if(shown>=200){clearInterval(fireT);fireT=null;e.target.textContent='Fire again'}},30);
+});
+
+/* ---- The maths behind each wave, written out live and checked against Curie's recorded numbers ---- */
+const WM = {
+  n: x => { const v = Math.abs(x) < 5e-10 ? 0 : x; return (v < 0 ? '−' : '') + Math.abs(v).toFixed(3); },
+  deg: t => { let d = t * 180 / Math.PI; d = ((d % 360) + 540) % 360 - 180; if (Math.abs(d + 180) < 1e-6) d = 180; return WM.n(d).replace(/\.000$/, '') + '°'; },
+  c: (r, t) => [r * Math.cos(t), r * Math.sin(t)],
+  add: (a, b) => [a[0] + b[0], a[1] + b[1]],
+  abs2: a => a[0] * a[0] + a[1] * a[1],
+  z: a => WM.n(a[0]) + (a[1] < -5e-10 ? ' − ' : ' + ') + WM.n(Math.abs(a[1])) + 'i',
+  esc: s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;'),
+  box(id, title, lines, ok, okText) {
+    const el = document.getElementById(id); if (!el) return;
+    el.innerHTML = '<p class="mq-title">' + title + '</p><div class="mq-lines">' +
+      lines.map(L => '<div class="mq-line"><code>' + WM.esc(L) + '</code></div>').join('') + '</div>' +
+      '<p class="mq-ok">' + (ok ? okText : '<span class="bad">Check failed: ' + okText + '</span>') + '</p>';
+  },
+};
+function wmMZI(deg) {
+  const phi = deg * Math.PI / 180, A = MZ.a, B = MZ.b, cur = mzCurie();
+  const a1 = WM.c(A, Math.PI / 2), b1 = WM.c(B, Math.PI / 2 + phi), s1 = WM.add(a1, b1);
+  const a2 = WM.c(A, 0), b2 = WM.c(B, phi + Math.PI), s2 = WM.add(a2, b2);
+  const I1 = WM.abs2(s1), I2 = WM.abs2(s2), c = Math.cos(phi);
+  const F1 = A * A + B * B + 2 * A * B * c, F2 = A * A + B * B - 2 * A * B * c;
+  let gap = Math.max(Math.abs(I1 - F1), Math.abs(I2 - F2));
+  if (cur) { const f = DATA.mzi[deg]; gap = Math.max(gap, Math.abs(I1 - f[1]), Math.abs(I2 - f[2])); }
+  WM.box('wm-mzi', 'The maths at \u03c6 = ' + (+deg.toFixed(4)) + '\u00b0', [
+    'Path 1 carries ' + WM.n(A) + ', path 2 carries ' + WM.n(B) + '. The splitter turns one path by 90\u00b0 and the plate adds \u03c6.',
+    'to D1:  ' + WM.n(A) + '\u222090\u00b0 + ' + WM.n(B) + '\u2220(90\u00b0 + \u03c6)',
+    '      = (' + WM.z(a1) + ') + (' + WM.z(b1) + ')  =  ' + WM.z(s1),
+    'light at D1 = |sum|\u00b2 = (' + WM.n(s1[0]) + ')\u00b2 + (' + WM.n(s1[1]) + ')\u00b2 = ' + WM.n(I1),
+    'to D2:  ' + WM.n(A) + '\u22200\u00b0 + ' + WM.n(B) + '\u2220(\u03c6 + 180\u00b0)  =  ' + WM.z(s2) + '   light = ' + WM.n(I2),
+    'the formula:  D1 = a\u00b2 + b\u00b2 + 2ab\u00b7cos\u03c6 = ' + WM.n(F1) + '   D2 = a\u00b2 + b\u00b2 \u2212 2ab\u00b7cos\u03c6 = ' + WM.n(F2),
+    (A === .5 && B === .5) ? 'with equal halves that is cos\u00b2(\u03c6/2) = ' + WM.n(Math.cos(phi / 2) ** 2) + ' and sin\u00b2(\u03c6/2) = ' + WM.n(Math.sin(phi / 2) ** 2)
+      : 'unequal paths can never cancel completely: the smallest D1 can be is (a \u2212 b)\u00b2 = ' + WM.n((A - B) ** 2),
+    'total = ' + WM.n(I1) + ' + ' + WM.n(I2) + ' = ' + WM.n(I1 + I2) + ' = 2(a\u00b2 + b\u00b2): light is moved between detectors, never lost',
+  ], gap < 1e-4, cur
+    ? 'Check: the arrow sums, the formula and Curie\u2019s recorded intensities <b>agree</b> (largest difference ' + gap.toExponential(1) + ').'
+    : 'Check: the arrow sums and the formula <b>agree</b> (largest difference ' + gap.toExponential(1) + '). Computed here; Curie recorded the equal-halves case at whole degrees.');
+}
+function wmRing() {
+  const f = ringFrame(), n = f.length, turn = turnRad(), cur = ringCurie();
+  const live = f.findIndex(v => v[0] > 1e-9), r0 = RG.r0, t0 = RG.t0 * Math.PI / 180, want = t0 + rs * turn;
+  let z = WM.c(r0, t0); const h = WM.c(1, turn);
+  for (let i = 0; i < rs; i++) z = [z[0] * h[0] - z[1] * h[1], z[0] * h[1] + z[1] * h[0]];
+  const got = live >= 0 ? WM.c(f[live][0], f[live][1]) : [0, 0];
+  const gap = Math.hypot(got[0] - z[0], got[1] - z[1]);
+  const lap = wrapA(n * turn), laps = (() => { for (let m = 1; m <= 360; m++) if (Math.abs(wrapA(m * n * turn)) < 1e-9) return m; return 0; })();
+  WM.box('wm-ring', 'The maths at step ' + rs, [
+    'Each hop moves the pulse one node on and multiplies it by 1\u2220' + WM.deg(turn) + '.',
+    'start:  ' + WM.n(r0) + '\u2220' + WM.deg(t0) + ' at node 0',
+    'after ' + rs + ' hop' + (rs === 1 ? '' : 's') + ':  ' + WM.n(r0) + '\u2220' + WM.deg(t0) + ' \u00d7 (1\u2220' + WM.deg(turn) + ')^' + rs + ' = ' + WM.n(r0) + '\u2220(' + WM.deg(t0) + ' + ' + rs + ' \u00d7 ' + WM.deg(turn) + ') = ' + WM.n(r0) + '\u2220' + WM.deg(want) + ', at node ' + (rs % n),
+    'lengths multiply (\u00d7 1 each hop), so the pulse never fades; only its angle turns.',
+    Math.abs(lap) < 1e-9 ? 'one lap of ' + n + ' hops turns it by ' + n + ' \u00d7 ' + WM.deg(turn) + ', a whole number of turns: it comes home exactly.'
+      : 'one lap of ' + n + ' hops turns it by ' + WM.deg(lap) + ', so it reaches node 0 again NOT home. ' + (laps ? 'It is home after ' + laps + ' laps (' + laps * n + ' hops).' : 'It never comes exactly home within 360 laps.'),
+  ], gap < 1e-6, cur
+    ? 'Check: hop-by-hop multiplication and Curie\u2019s node ' + live + ' (' + WM.n(f[live][0]) + '\u2220' + WM.deg(f[live][1]) + ') <b>agree</b>.'
+    : 'Check: multiplying hop by hop and the one-line formula <b>agree</b> (difference ' + gap.toExponential(1) + '). Computed here.');
+}
+function wmOrder() {
+  const R = odResults(), d = Math.PI / 180, cur = odCurie();
+  const z = WM.c(OD.r, OD.t * d), rot = WM.c(1, OD.a * d), w = WM.c(OD.wr, OD.wt * d);
+  const mul = (p, q) => [p[0] * q[0] - p[1] * q[1], p[0] * q[1] + p[1] * q[0]], conj = p => [p[0], -p[1]];
+  const rf = conj(mul(z, rot)), fr = mul(conj(z), rot);
+  const Lrf = WM.abs2(WM.add(rf, w)), Lfr = WM.abs2(WM.add(fr, w));
+  const gap = Math.max(Math.abs(Lrf - R.rf[2]), Math.abs(Lfr - R.fr[2]));
+  WM.box('wm-order', 'The maths', [
+    'rotate, then flip:  ' + WM.n(OD.r) + '\u2220' + WM.deg(OD.t * d) + ' \u2192 rotate \u2192 \u2220' + WM.deg((OD.t + OD.a) * d) + ' \u2192 flip \u2192 \u2220' + WM.deg(-(OD.t + OD.a) * d),
+    '   = ' + WM.z(rf) + ';  + (' + WM.z(w) + ') = ' + WM.z(WM.add(rf, w)) + '   light = ' + WM.n(Lrf),
+    'flip, then rotate:  ' + WM.n(OD.r) + '\u2220' + WM.deg(OD.t * d) + ' \u2192 flip \u2192 \u2220' + WM.deg(-OD.t * d) + ' \u2192 rotate \u2192 \u2220' + WM.deg((OD.a - OD.t) * d),
+    '   = ' + WM.z(fr) + ';  + (' + WM.z(w) + ') = ' + WM.z(WM.add(fr, w)) + '   light = ' + WM.n(Lfr),
+    'the two orders end at angles \u2212(\u03b8 + \u03b1) and \u03b1 \u2212 \u03b8. They only match when \u03b1 is 0\u00b0 or 180\u00b0' + (Math.abs(wrapA(2 * OD.a * d)) < 1e-9 ? ', which yours is: so here order does NOT matter.' : '; yours is ' + WM.deg(OD.a * d) + ', so order matters.'),
+  ], gap < 1e-9, cur
+    ? 'Check: angle arithmetic, x + yi arithmetic and Curie\u2019s results <b>agree</b>.'
+    : 'Check: angle arithmetic and x + yi arithmetic <b>agree</b> (difference ' + gap.toExponential(1) + '). Computed here.');
+}
+function wmRoots() {
+  const n = +rootn.value, mode = rootof.value === 'own' ? 'own' : (rootof.value === 'one' || !DATA.roots.z.by_n[n] ? 'one' : 'z');
+  const r0 = mode === 'own' ? RT.r : mode === 'one' ? 1 : 1.6, t0 = mode === 'own' ? RT.t * Math.PI / 180 : mode === 'one' ? 0 : 1.1;
+  const pts = mode === 'own' ? rootsOwn(n) : mode === 'one' ? DATA.roots[n].pts : DATA.roots.z.by_n[n];
+  const len = Math.pow(r0, 1 / n), target = WM.c(r0, t0); let gap = 0, gapC = 0; const lines = [];
+  lines.push('the kth root of ' + WM.n(r0) + '\u2220' + WM.deg(t0) + ':  length ' + WM.n(r0) + '^(1/' + n + ') = ' + WM.n(len) + ',  angle (' + WM.deg(t0) + ' + 360\u00b0\u00b7k) / ' + n);
+  let sum = [0, 0];
+  for (let k = 0; k < n; k++) {
+    const t = (t0 + 2 * Math.PI * k) / n, p = WM.c(len, t); sum = WM.add(sum, p);
+    const q = WM.c(pts[k][0], pts[k][1]); gapC = Math.max(gapC, Math.hypot(p[0] - q[0], p[1] - q[1]));
+    let pw = [1, 0]; for (let i = 0; i < n; i++) pw = [pw[0] * q[0] - pw[1] * q[1], pw[0] * q[1] + pw[1] * q[0]];
+    gap = Math.max(gap, Math.hypot(pw[0] - target[0], pw[1] - target[1]) / Math.max(1, r0));
+    if (k < 3) lines.push('k = ' + k + ':  ' + WM.n(len) + '\u2220' + WM.deg(t) + '  =  ' + WM.z(p));
+  }
+  if (n > 3) lines.push('\u2026 and ' + (n - 3) + ' more, each ' + WM.deg(2 * Math.PI / n) + ' further round');
+  lines.push('check: each root multiplied by itself ' + n + ' times, in x + yi arithmetic, lands back on ' + WM.z(target));
+  lines.push('sum of all ' + n + ' roots = ' + WM.z(sum) + ': turning the set by ' + WM.deg(2 * Math.PI / n) + ' leaves it unchanged, so the sum equals itself turned, and only 0 can do that.');
+  const ok = gap < 1e-4 && (mode === 'own' || gapC < 1e-4);
+  WM.box('wm-roots', 'The maths for n = ' + n, lines, ok, mode === 'own'
+    ? 'Check: all ' + n + ' roots, raised to the ' + n + 'th by repeated multiplication, give your number back, <b>agree</b>. Computed here.'
+    : 'Check: all ' + n + ' roots match Curie\u2019s and give the number back when raised to the ' + n + 'th, <b>agree</b> (largest difference ' + Math.max(gap, gapC).toExponential(1) + ').');
+}
+function wmSpec() {
+  const sig = specSignal(), pw = specPower(sig), N = sig.length, peaks = [], dflt = specIsDefault();
+  const want = {}; for (const [k, a] of specTones) want[k] = (want[k] || 0) + a;
+  let gap = 0, gapC = 0;
+  for (let k = 0; k < N; k++) {
+    let X = [0, 0];
+    for (let j = 0; j < N; j++) X = WM.add(X, WM.c(sig[j], -2 * Math.PI * j * k / N));
+    const P = WM.abs2(X), kk = k <= N / 2 ? k : N - k, pred = ((N / 2) * (want[kk] || 0)) ** 2;
+    gap = Math.max(gap, Math.abs(P - pred) / Math.max(1, pred));
+    if (dflt) gapC = Math.max(gapC, Math.abs(P - pw[k]) / Math.max(1, pw[k]));
+    if (P > 1e-6 && k <= N / 2) peaks.push([k, X, P]);
+  }
+  const lines = ['the signal:  x\u2c7c = ' + specTones.map(([k, a]) => WM.n(a) + '\u00b7cos(360\u00b0\u00b7' + k + '\u00b7j/' + N + ')').join(' + '),
+    'for each bin k:  X\u2096 = \u03a3 x\u2c7c \u00b7 1\u2220(\u2212360\u00b0 \u00b7 j \u00b7 k / ' + N + '),  j = 0 \u2026 ' + (N - 1) + ';  intensity = |X\u2096|\u00b2',
+    'a tone of loudness A at k cycles spins in step with bin k, so its ' + N + ' arrows line up: |X\u2096| = ' + N + ' \u00d7 A / 2.'];
+  peaks.forEach(([k, X, P]) => lines.push('k = ' + k + ':  X = ' + WM.z(X) + '   |X|\u00b2 = ' + WM.n(P) + '   predicted (' + N + ' \u00d7 ' + WM.n(want[k] || 0) + ' / 2)\u00b2 = ' + WM.n(((N / 2) * (want[k] || 0)) ** 2) + '   (mirror at k = ' + (N - k) + ')'));
+  if (!peaks.length) lines.push('every tone is silent, so every bin is 0.');
+  lines.push('every other bin: the arrows go whole turns round the circle and cancel to 0.');
+  const ok = gap < 1e-3 && (!dflt || gapC < 1e-3);
+  WM.box('wm-spec', 'The maths', lines, ok, dflt
+    ? 'Check: all ' + N + ' bins match the N\u00b7A/2 prediction and Curie\u2019s own spectrum, <b>agree</b>.'
+    : 'Check: all ' + N + ' bins match the N\u00b7A/2 prediction, <b>agree</b>. (Curie\u2019s recorded run is the default three tones; this one is computed here.)');
+}
+function wmClicks() {
+  const deg = CK.phi, seq = clickSeq(), cur = ckCurie();
+  const p = Math.cos(deg * Math.PI / 360) ** 2, N = 200, mu = N * p, sd = Math.sqrt(N * p * (1 - p));
+  const n1 = seq.slice(0, Math.max(shown, 0)).filter(v => v === 1).length, all1 = seq.filter(v => v === 1).length;
+  const z = sd > 1e-9 ? (all1 - mu) / sd : 0;
+  const who = cur ? 'Curie\u2019s 200 draws' : 'This page\u2019s 200 draws (seed ' + (CK.seed === null ? 1 : CK.seed) + ')';
+  WM.box('wm-clicks', 'The maths at \u03c6 = ' + (+deg.toFixed(4)) + '\u00b0', [
+    'chance of detector 1 = cos\u00b2(\u03c6/2) = cos\u00b2(' + (+(deg / 2).toFixed(4)) + '\u00b0) = ' + WM.n(p) + ',  detector 2 = ' + WM.n(1 - p),
+    'expected from 200:  200 \u00d7 ' + WM.n(p) + ' = ' + mu.toFixed(1) + ' at detector 1',
+    'typical scatter:  \u221a(200 \u00d7 ' + WM.n(p) + ' \u00d7 ' + WM.n(1 - p) + ') = ' + sd.toFixed(1) + ' photons either way',
+    who + ' put ' + all1 + ' at detector 1' + (sd > 1e-9 ? ': ' + Math.abs(z).toFixed(1) + ' scatters ' + (z < 0 ? 'below' : 'above') + ' expected' : ', as it must when the chance is certain'),
+    shown ? 'so far on screen: ' + n1 + ' of ' + shown : 'press Fire to watch them land',
+  ], sd > 1e-9 ? Math.abs(z) < 3 : all1 === Math.round(mu), sd > 1e-9
+    ? 'Check: within 3 scatters of the theory, which is what real draws should do, <b>agree</b>.' + (Math.abs(z) >= 2 ? ' (Over 2 scatters: about 1 run in 20 lands this far out.)' : '')
+    : 'Check: the certain outcome happened every time, <b>agree</b>.');
+}
+function all(){drawMZI(MZ.phi);drawRing();drawRoots();drawSpec();drawClicks();renderOrder()}
+all();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',all);
+new MutationObserver(all).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+/* A thank-you to the namesake: tap a page title five times quickly, or type "curie" or "marie". */
+(function(){
+  const box = document.getElementById('marie');
+  const open = () => { if(!box.hidden) return; box.hidden = false; document.documentElement.classList.add('radium'); all(); document.getElementById('marie-x').focus(); };
+  const close = () => { box.hidden = true; document.documentElement.classList.remove('radium'); all(); };
+  document.getElementById('marie-x').addEventListener('click', close);
+  box.addEventListener('click', e => { if(e.target === box) close(); });
+  let taps = 0, last = 0;
+  document.querySelectorAll('h1').forEach(h => h.addEventListener('click', () => {
+    const now = Date.now(); taps = now - last < 700 ? taps + 1 : 1; last = now;
+    if(taps >= 5){ taps = 0; open(); }
+  }));
+  let typed = '';
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape' && !box.hidden){ close(); return; }
+    const t = e.target; if(t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
+    if(e.key.length !== 1) return;
+    typed = (typed + e.key.toLowerCase()).slice(-5);
+    if(typed === 'curie' || typed === 'marie') open();
+  });
+})();
+
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(all);
+</script>
+<script>
+const QDATA = __QDATA__;
+(function(){
+const SQ = Math.SQRT1_2, EPS = 1e-9;
+const $ = id => document.getElementById(id);
+
+/* ---- a small browser engine with Curie's rules (q0 is the leftmost bit) ---- */
+function fromPolar(list){return list.map(([r,t]) => [r*Math.cos(t), r*Math.sin(t)])}
+function zerosState(n){const s=[]; for(let i=0;i<(1<<n);i++) s.push([i===0?1:0,0]); return s}
+function nOf(s){return Math.round(Math.log2(s.length))}
+function mask(n,q){return 1 << (n-1-q)}
+function mulPhase(a,phi){const c=Math.cos(phi), s=Math.sin(phi); return [a[0]*c-a[1]*s, a[0]*s+a[1]*c]}
+function apply(state, op, args){
+  const s = state.map(a => [a[0],a[1]]), n = nOf(s), N = s.length;
+  const one = (q, f) => {const m = mask(n,q); for(let i=0;i<N;i++) if(i & m) s[i] = f(s[i]);};
+  switch(op){
+    case 'h': {const m=mask(n,args[0]); for(let i=0;i<N;i++) if(!(i&m)){const a=s[i], b=s[i|m];
+      s[i]=[(a[0]+b[0])*SQ,(a[1]+b[1])*SQ]; s[i|m]=[(a[0]-b[0])*SQ,(a[1]-b[1])*SQ];} return s;}
+    case 'x': {const m=mask(n,args[0]); for(let i=0;i<N;i++) if(!(i&m)){const t=s[i]; s[i]=s[i|m]; s[i|m]=t;} return s;}
+    case 'z': one(args[0], a => [-a[0],-a[1]]); return s;
+    case 's': one(args[0], a => mulPhase(a, Math.PI/2)); return s;
+    case 't': one(args[0], a => mulPhase(a, Math.PI/4)); return s;
+    case 'phase': one(args[0], a => mulPhase(a, args[1])); return s;
+    case 'ry': {const m=mask(n,args[0]), c=Math.cos(args[1]/2), sn=Math.sin(args[1]/2); for(let i=0;i<N;i++) if(!(i&m)){const a=s[i], b=s[i|m];
+      s[i]=[c*a[0]-sn*b[0], c*a[1]-sn*b[1]]; s[i|m]=[sn*a[0]+c*b[0], sn*a[1]+c*b[1]];} return s;}
+    case 'cnot': {const c=mask(n,args[0]), t=mask(n,args[1]); for(let i=0;i<N;i++) if((i&c) && !(i&t)){const u=s[i]; s[i]=s[i|t]; s[i|t]=u;} return s;}
+    case 'cz': {const m=mask(n,args[0])|mask(n,args[1]); for(let i=0;i<N;i++) if((i&m)===m) s[i]=[-s[i][0],-s[i][1]]; return s;}
+    case 'swap': {const a=mask(n,args[0]), b=mask(n,args[1]); const out=s.map(v=>v); for(let i=0;i<N;i++){let j=i&~(a|b); if(i&a) j|=b; if(i&b) j|=a; out[j]=s[i];} return out;}
+    case 'mcz': {let m=0; for(const q of args[0]) m|=mask(n,q); for(let i=0;i<N;i++) if((i&m)===m) s[i]=[-s[i][0],-s[i][1]]; return s;}
+    case 'flip': s[args[0]]=[-s[args[0]][0],-s[args[0]][1]]; return s;
+    case 'oracle_phase': {const ins=args[0], table=args[1]; for(let i=0;i<N;i++){let k=0; for(const q of ins) k=(k<<1)|((i&mask(n,q))?1:0); if(table[k]) s[i]=[-s[i][0],-s[i][1]];} return s;}
+  }
+  throw new Error('unknown op ' + op);
+}
+function dist(a,b){let m=0; for(let i=0;i<a.length;i++) m=Math.max(m, Math.hypot(a[i][0]-b[i][0], a[i][1]-b[i][1])); return m}
+
+/* ---- check the browser engine against every Curie step, every time the page opens ---- */
+(function check(){
+  let steps=0, worst=0, chainWorst=0;
+  for(const p of QDATA){
+    let chain = fromPolar(p.initial);
+    for(const st of p.steps){
+      const mine = apply(fromPolar(st.before), st.op, st.args);
+      worst = Math.max(worst, dist(mine, fromPolar(st.after)));
+      chain = apply(chain, st.op, st.args);
+      chainWorst = Math.max(chainWorst, dist(chain, fromPolar(st.after)));
+      steps++;
+    }
+  }
+  const big = Math.max(worst, chainWorst), ok = big < EPS;
+  window.__qcheck = {steps, worst, chainWorst, ok};
+  $('check').innerHTML = ok
+    ? 'Browser engine vs Curie: <b>agree</b> on all ' + steps + ' recorded steps of ' + QDATA.length + ' circuits (largest difference ' + big.toExponential(1) + ').'
+    : '<span class="bad">Browser engine and Curie DISAGREE</span> (largest difference ' + big.toExponential(2) + '). Trust the presets, not your own circuits, until this is fixed.';
+})();
+
+/* ---- viewer ---- */
+function bits(i,n){return i.toString(2).padStart(n,'0')}
+function label(op,args,n){
+  switch(op){
+    case 'cnot': return 'CNOT ' + args[0] + '→' + args[1];
+    case 'cz': return 'CZ ' + args[0] + '·' + args[1];
+    case 'swap': return 'SWAP ' + args[0] + '·' + args[1];
+    case 'mcz': return 'Z all';
+    case 'flip': return 'Mark ' + bits(args[0], n);
+    case 'oracle_phase': return 'Ask';
+    case 'phase': return 'Turn q' + args[0];
+    default: return op.toUpperCase() + ' q' + args[0];
+  }
+}
+const SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs){const e = document.createElementNS(SVGNS, name); for(const k in attrs) e.setAttribute(k, attrs[k]); return e}
+function hand(a){
+  const r = Math.hypot(a[0],a[1]), t = Math.atan2(a[1],a[0]);
+  const svg = el('svg', {width:'30', height:'30', viewBox:'-15 -15 30 30', 'aria-hidden':'true'});
+  svg.appendChild(el('circle', {r:'12', fill:'none', stroke:'var(--rule)', 'stroke-width':'1.5'}));
+  if(r > EPS){
+    const L = 11 * Math.min(1, 0.35 + r);
+    svg.appendChild(el('line', {x1:'0', y1:'0', x2:(L*Math.cos(t)).toFixed(2), y2:(-L*Math.sin(t)).toFixed(2),
+      stroke:'var(--beam2)', 'stroke-width':'2.5', 'stroke-linecap':'round'}));
+    svg.appendChild(el('circle', {r:'2', fill:'var(--beam2)'}));
+  }
+  return svg;
+}
+
+let cur = null, k = 0, timer = null;
+function states(p){
+  if(p.computed) return p.computed;
+  return [fromPolar(p.initial)].concat(p.steps.map(s => fromPolar(s.after)));
+}
+function render(){
+  if(!cur) return;
+  const st = states(cur), n = cur.n, amps = st[k];
+  const strip = $('strip'); strip.textContent = '';
+  const b0 = document.createElement('button'); b0.type='button'; b0.textContent='start'; b0.className = k===0?'now':'done';
+  b0.onclick=()=>{stop(); k=0; render()}; strip.appendChild(b0);
+  cur.steps.forEach((s,i) => {const b=document.createElement('button'); b.type='button'; b.textContent=label(s.op,s.args,n);
+    b.className = (i+1===k)?'now':((i+1<k)?'done':''); b.onclick=()=>{stop(); k=i+1; render()}; strip.appendChild(b)});
+  $('cap').textContent = cur.captions[k];
+  const box = $('amps');
+  if(box.children.length !== amps.length){
+    box.textContent = '';
+    amps.forEach((_,i) => {const row=document.createElement('div'); row.className='amp';
+      row.innerHTML = '<span class="lab">' + bits(i,n) + '</span><span class="track"><span class="fill"></span></span><span class="pct"></span><span class="h"></span>';
+      box.appendChild(row)});
+  }
+  amps.forEach((a,i) => {const row = box.children[i], p = a[0]*a[0] + a[1]*a[1];
+    row.querySelector('.fill').style.width = (100*p).toFixed(2) + '%';
+    const tiny = p < 5e-13, whole = p > 0.9995;
+    row.querySelector('.pct').textContent = (tiny ? 0 : 100*p).toFixed(tiny || whole ? 0 : 1) + '%';
+    const h = row.querySelector('.h'); h.textContent=''; h.appendChild(hand(a));
+    row.setAttribute('aria-label', bits(i,n) + ': ' + (tiny ? 0 : 100*p).toFixed(1) + ' percent')});
+  qMath(cur, k, st);
+  $('qpos').textContent = 'step ' + k + ' of ' + cur.steps.length;
+  $('qprev').disabled = k===0; $('qnext').disabled = k===cur.steps.length;
+}
+function stop(){ if(timer){clearInterval(timer); timer=null; $('qplay').textContent='Play';} }
+function choose(p){
+  stop(); cur = p; k = 0; $('amps').textContent='';
+  [...$('qpick').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.key === p.key)));
+  render();
+}
+function pickButton(p){const b=document.createElement('button'); b.type='button'; b.textContent=p.title; b.dataset.key=p.key; b.onclick=()=>choose(p); return b}
+QDATA.forEach(p => $('qpick').appendChild(pickButton(p)));
+$('qprev').onclick = () => {stop(); if(k>0){k--; render()}};
+$('qnext').onclick = () => {stop(); if(k<cur.steps.length){k++; render()}};
+$('qplay').onclick = () => {
+  if(timer){stop(); return}
+  if(k>=cur.steps.length) k=0;
+  $('qplay').textContent='Pause'; render();
+  timer = setInterval(() => {if(k>=cur.steps.length){stop(); return} k++; render()}, 1100);
+};
+
+/* ---- build your own ---- */
+const GATES = [['H','h',1],['X','x',1],['Z','z',1],['S','s',1],['T','t',1],['CNOT','cnot',2],['CZ','cz',2]];
+const SAY = {h:'H on qubit %: splits it, or rejoins it if it was already split.', x:'X on qubit %: swaps its 0 and 1.',
+  z:'Z on qubit %: turns its 1-path half a circle.', s:'S on qubit %: turns its 1-path a quarter circle.',
+  t:'T on qubit %: turns its 1-path an eighth of a circle.'};
+let mine = [], armed = null, picked = [];
+const MAX = 14;
+function qn(){return +$('qn').value}
+function drawMine(){
+  const m = $('mine'); m.textContent='';
+  if(!mine.length){m.textContent='(empty)'; return}
+  mine.forEach(([op,args]) => {const s=document.createElement('span'); s.textContent=label(op,args,qn());
+    s.style.cssText='border:1px solid var(--rule);border-radius:6px;padding:5px 9px'; m.appendChild(s)});
+}
+function drawQubits(){
+  const box = $('qsel'); box.textContent='';
+  for(let q=0;q<qn();q++){const b=document.createElement('button'); b.type='button'; b.textContent='qubit '+q; b.onclick=()=>tapQubit(q); box.appendChild(b)}
+}
+function hint(t){$('hint').textContent=t}
+function arm(g){
+  armed = g; picked = [];
+  [...$('pal').children].forEach(b => b.classList.toggle('arm', b.dataset.op === g[1]));
+  hint(g[2]===1 ? g[0] + ': tap the qubit.' : (qn()<2 ? 'Two-qubit gates need at least 2 qubits.' : g[0] + ': tap the control qubit, then the target.'));
+}
+function tapQubit(q){
+  if(!armed){hint('Tap a gate first.'); return}
+  if(mine.length>=MAX){hint('That is the limit, ' + MAX + ' gates. Undo one or step through it.'); return}
+  if(armed[2]===1){mine.push([armed[1],[q]]); drawMine(); hint('Added. Tap another qubit for the same gate, or pick a new gate.'); return}
+  if(qn()<2) return;
+  picked.push(q);
+  if(picked.length===1){hint(armed[0] + ': control is qubit ' + q + '. Now the target.'); return}
+  if(picked[0]===picked[1]){picked=[picked[0]]; hint('The target must be a different qubit.'); return}
+  mine.push([armed[1],[picked[0],picked[1]]]); picked=[]; drawMine(); hint('Added. Tap a control again for another ' + armed[0] + ', or pick a new gate.');
+}
+GATES.forEach(g => {const b=document.createElement('button'); b.type='button'; b.textContent=g[0]; b.dataset.op=g[1]; b.onclick=()=>arm(g); $('pal').appendChild(b)});
+$('qn').onchange = () => {mine=[]; picked=[]; drawQubits(); drawMine(); hint('Tap a gate, then the qubit it acts on.')};
+$('qundo').onclick = () => {mine.pop(); picked=[]; drawMine()};
+$('qclear').onclick = () => {mine=[]; picked=[]; drawMine()};
+$('qshow').onclick = () => {
+  if(!mine.length){hint('Add a gate or two first.'); return}
+  const n = qn(), computed = [zerosState(n)];
+  mine.forEach(([op,args]) => computed.push(apply(computed[computed.length-1], op, args)));
+  const caps = ['Start: ' + (n===1 ? 'the qubit is 0.' : 'all ' + n + ' qubits are 0.')].concat(mine.map(([op,args]) =>
+    op==='cnot' ? 'CNOT: flips qubit ' + args[1] + ' wherever qubit ' + args[0] + ' is 1.' :
+    op==='cz' ? 'CZ: turns the paths where qubits ' + args[0] + ' and ' + args[1] + ' are both 1 half a circle.' :
+    SAY[op].replace('%', args[0])));
+  const p = {key:'mine', title:'Yours', n, captions:caps, steps:mine.map(([op,args]) => ({op,args})), computed};
+  const old = [...$('qpick').children].find(x => x.dataset.key==='mine');
+  if(old) old.remove();
+  $('qpick').appendChild(pickButton(p));
+  choose(p);
+  $('qv-h').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start'});
+};
+drawQubits(); drawMine();
+
+/* ---- the maths, step by step ----
+   The HAND column is computed here, independently, from each gate's 2x2 matrix (or its swap/sign rule)
+   in plain complex arithmetic. The ENGINE column is apply() above, the one checked against Curie on load.
+   Every step compares the two, so a wrong answer stops being taught the moment it appears. */
+const C = {
+  add: (a,b) => [a[0]+b[0], a[1]+b[1]],
+  mul: (a,b) => [a[0]*b[0]-a[1]*b[1], a[0]*b[1]+a[1]*b[0]],
+  neg: a => [-a[0], -a[1]],
+  abs: a => Math.hypot(a[0], a[1]),
+  ang: a => Math.atan2(a[1], a[0]),
+};
+const MINUS = '−';
+function num(x){const v = Math.abs(x) < 5e-10 ? 0 : x; return (v < 0 ? MINUS : '') + Math.abs(v).toFixed(3)}
+function fmt(z){
+  const re = Math.abs(z[0]) < 5e-10 ? 0 : z[0], im = Math.abs(z[1]) < 5e-10 ? 0 : z[1];
+  if(im === 0) return num(re);
+  if(re === 0) return num(im) + 'i';
+  return num(re) + (im < 0 ? ' ' + MINUS + ' ' : ' + ') + Math.abs(im).toFixed(3) + 'i';
+}
+function ket(i,n){return '|' + bits(i,n) + '⟩'}
+const DEG = Math.PI / 180;
+function matrixOf(st){
+  const s2 = Math.SQRT1_2, c = Math.cos, sn = Math.sin, th = (st.deg || 0) * DEG;
+  switch(st.op){
+    case 'h': return [[[s2,0],[s2,0]],[[s2,0],[-s2,0]]];
+    case 'x': return [[[0,0],[1,0]],[[1,0],[0,0]]];
+    case 'z': return [[[1,0],[0,0]],[[0,0],[-1,0]]];
+    case 'phase': return [[[1,0],[0,0]],[[0,0],[c(th),sn(th)]]];
+    case 'ry': return [[[c(th/2),0],[-sn(th/2),0]],[[sn(th/2),0],[c(th/2),0]]];
+  }
+  return null;
+}
+function stepName(st){
+  switch(st.op){
+    case 'h': return 'H on qubit ' + st.q;
+    case 'x': return 'X on qubit ' + st.q;
+    case 'z': return 'Z on qubit ' + st.q;
+    case 'phase': return 'Phase ' + st.deg + '° on qubit ' + st.q;
+    case 'ry': return 'Ry ' + st.deg + '° on qubit ' + st.q;
+    case 'cnot': return 'CNOT, control ' + st.q + ', target ' + st.t;
+    case 'cz': return 'CZ on qubits ' + st.q + ' and ' + st.t;
+    case 'mcz': return 'Z on all of qubits ' + st.qs.join(', ');
+    case 'flip': return 'Mark ' + ket(st.idx, st.n || 0).replace('||', '|');
+    case 'oracle': return 'Ask the question (oracle)';
+  }
+}
+function shortName(st){
+  switch(st.op){
+    case 'phase': return 'P' + st.deg + ' q' + st.q;
+    case 'ry': return 'Ry' + st.deg + ' q' + st.q;
+    case 'cnot': return 'CNOT ' + st.q + '→' + st.t;
+    case 'cz': return 'CZ ' + st.q + '·' + st.t;
+    default: return st.op.toUpperCase() + ' q' + st.q;
+  }
+}
+function engineArgs(st){
+  if(st.op === 'phase' || st.op === 'ry') return [st.q, st.deg * DEG];
+  if(st.op === 'cnot' || st.op === 'cz') return [st.q, st.t];
+  return [st.q];
+}
+/* One step by hand: returns the new amplitudes and the written-out lines. */
+function handStep(amps, n, st){
+  const out = amps.map(a => [a[0], a[1]]), lines = [], N = amps.length;
+  const M = matrixOf(st);
+  if(M){
+    const m = mask(n, st.q);
+    for(let i=0;i<N;i++){
+      if(i & m) continue;
+      const j = i | m, a = amps[i], b = amps[j];
+      if(C.abs(a) < EPS && C.abs(b) < EPS) continue;
+      [[i, M[0][0], M[0][1]], [j, M[1][0], M[1][1]]].forEach(([k, p, q]) => {
+        const t1 = C.mul(p, a), t2 = C.mul(q, b), r = C.add(t1, t2);
+        out[k] = r;
+        let tag = null;
+        if(C.abs(t1) > EPS && C.abs(t2) > EPS){
+          if(C.abs(r) < EPS) tag = ['cancel', 'the two paths cancel'];
+          else if(Math.abs(C.abs(r) - (C.abs(t1) + C.abs(t2))) < EPS) tag = ['add', 'the two paths add up'];
+          else if(C.abs(r) > Math.max(C.abs(t1), C.abs(t2))) tag = ['add', 'the paths partly reinforce'];
+          else tag = ['cancel', 'the paths partly cancel'];
+        }
+        lines.push({text: 'new ' + ket(k,n) + ' = (' + fmt(p) + ')(' + fmt(a) + ') + (' + fmt(q) + ')(' + fmt(b) + ') = ' + fmt(r), tag});
+      });
+    }
+    return {out, lines, matrix: M};
+  }
+  if(st.op === 'cnot'){
+    const c = mask(n, st.q), t = mask(n, st.t);
+    for(let i=0;i<N;i++){
+      if((i & c) && !(i & t)){
+        const j = i | t;
+        out[i] = amps[j]; out[j] = amps[i];
+        if(C.abs(amps[i]) > EPS || C.abs(amps[j]) > EPS)
+          lines.push({text: 'new ' + ket(i,n) + ' = old ' + ket(j,n) + ' = ' + fmt(amps[j]) + ',   new ' + ket(j,n) + ' = old ' + ket(i,n) + ' = ' + fmt(amps[i]), tag: null});
+      }
+    }
+    if(!lines.length) lines.push({text: 'Every amplitude where qubit ' + st.q + ' is 1 is already zero, so nothing moves.', tag: null});
+    return {out, lines, matrix: null};
+  }
+  if(st.op === 'cz'){
+    const m = mask(n, st.q) | mask(n, st.t);
+    for(let i=0;i<N;i++){
+      if((i & m) === m){
+        out[i] = C.neg(amps[i]);
+        if(C.abs(amps[i]) > EPS) lines.push({text: 'new ' + ket(i,n) + ' = ' + MINUS + '(old ' + ket(i,n) + ') = ' + MINUS + '(' + fmt(amps[i]) + ') = ' + fmt(out[i]), tag: null});
+      }
+    }
+    if(!lines.length) lines.push({text: 'Every amplitude where both qubits are 1 is zero, so there is nothing to flip.', tag: null});
+    return {out, lines, matrix: null};
+  }
+  if(st.op === 'mcz' || st.op === 'flip' || st.op === 'oracle'){
+    let hit;
+    if(st.op === 'mcz'){ let m = 0; for(const q of st.qs) m |= mask(n, q); hit = i => (i & m) === m; }
+    else if(st.op === 'flip') hit = i => i === st.idx;
+    else hit = i => { let key = 0; for(const q of st.ins) key = (key << 1) | ((i & mask(n, q)) ? 1 : 0); return !!st.table[key]; };
+    for(let i=0;i<N;i++){
+      if(hit(i)){
+        out[i] = C.neg(amps[i]);
+        if(C.abs(amps[i]) > EPS) lines.push({text: 'new ' + ket(i,n) + ' = ' + MINUS + '(old ' + ket(i,n) + ') = ' + MINUS + '(' + fmt(amps[i]) + ') = ' + fmt(out[i]), tag: null});
+      }
+    }
+    if(!lines.length) lines.push({text: 'Every amplitude this step would flip is already zero.', tag: null});
+    return {out, lines, matrix: null};
+  }
+  throw new Error('no hand rule for ' + st.op);
+}
+const WHY = {
+  h: 'Mixes each pair of amplitudes that differ only in this qubit: their sum and their difference, each scaled by 0.707.',
+  x: 'Swaps each pair of amplitudes that differ only in this qubit.',
+  z: 'Leaves the 0-path alone and turns every amplitude where this qubit is 1 half a circle (times −1).',
+  phase: 'Leaves the 0-path alone and turns every amplitude where this qubit is 1 by the angle you gave.',
+  ry: 'Rotates each pair of amplitudes that differ only in this qubit by half the angle you gave.',
+  cnot: 'Where the control qubit is 1, swaps the two amplitudes that differ only in the target qubit. Everything else stays.',
+  cz: 'Flips the sign of every amplitude where both qubits are 1. Probabilities do not change; only the phase does.',
+  mcz: 'Flips the sign of the one amplitude where every listed qubit is 1.',
+  flip: 'Flips the sign of one amplitude, the marked answer. Its chance is unchanged: the mark lives only in the phase.',
+  oracle: 'Flips the sign of every amplitude whose input the hidden function answers 1 for. The answer is hidden in the phases.',
+};
+/* Engine op -> a step the hand rules understand. */
+function stepFromOp(op, args, n){
+  switch(op){
+    case 's': return {op:'phase', q:args[0], deg:90};
+    case 't': return {op:'phase', q:args[0], deg:45};
+    case 'phase': case 'ry': return {op, q:args[0], deg:+(args[1]/DEG).toFixed(6)};
+    case 'cnot': case 'cz': return {op, q:args[0], t:args[1]};
+    case 'mcz': return {op, qs:args[0]};
+    case 'flip': return {op, idx:args[0], n};
+    case 'oracle_phase': return {op:'oracle', ins:args[0], table:args[1]};
+    default: return {op, q:args[0]};
+  }
+}
+/* The same written-out maths, for the circuit viewer above: each step by hand, checked against
+   the state Curie recorded (presets) or the engine computed (your own circuits). */
+function qMath(cur, k, st){
+  const box = $('qmath');
+  if(k === 0){ box.innerHTML = '<p class="mq-why">Tap Next and each step shows its maths here: the matrix, every sum, and whether the paths add up or cancel.</p>'; return; }
+  const n = cur.n, raw = cur.steps[k-1], step = stepFromOp(raw.op, raw.args, n);
+  let d;
+  try { d = handStep(st[k-1], n, step); } catch(e){ box.innerHTML = '<p class="mq-why">No written-out maths for this gate yet.</p>'; return; }
+  let html = '<p class="mq-title">Step ' + k + ': ' + stepName(step) + '</p><p class="mq-why">' + (WHY[step.op] || '') + '</p>';
+  if(d.matrix){
+    const M = d.matrix;
+    html += '<div class="mq-mat"><span>matrix</span><span class="grid"><span>' + fmt(M[0][0]) + '</span><span>' + fmt(M[0][1]) +
+      '</span><span>' + fmt(M[1][0]) + '</span><span>' + fmt(M[1][1]) + '</span></span></div>';
+  }
+  html += '<div class="mq-lines">' + d.lines.map(L => '<div class="mq-line"><code>' + esc(L.text) + '</code>' +
+    (L.tag ? '<span class="tag ' + L.tag[0] + '">' + L.tag[1] + '</span>' : '') + '</div>').join('') + '</div>';
+  const diff = dist(d.out, st[k]), who = cur.computed ? 'the engine' : "Curie’s recorded step";
+  html += '<p class="mq-ok">' + (diff < 1e-6 ?
+    'Check: the hand maths and ' + who + ' <b>agree</b> (largest difference ' + diff.toExponential(1) + ').' :
+    '<span class="bad">Check failed: the hand maths and ' + who + ' disagree by ' + diff.toExponential(2) + '.</span>') + '</p>';
+  box.innerHTML = html;
+}
+const LESSONS = [
+  {key:'int', title:'Interference', n:1, start:0, steps:[{op:'h',q:0},{op:'h',q:0}],
+   note:'H then H does nothing: the two routes into |1⟩ arrive with opposite signs and cancel.'},
+  {key:'flip', title:'A phase flip moves the answer', n:1, start:0, steps:[{op:'h',q:0},{op:'phase',q:0,deg:180},{op:'h',q:0}],
+   note:'One 180° turn between the two H gates, and the answer moves from |0⟩ to |1⟩.'},
+  {key:'ent', title:'Entanglement', n:2, start:0, steps:[{op:'h',q:0},{op:'cnot',q:0,t:1}],
+   note:'After the CNOT the two qubits can no longer be described one at a time.'},
+  {key:'grv', title:'Grover, four items', n:2, start:0, steps:[{op:'h',q:0},{op:'h',q:1},{op:'cz',q:0,t:1},
+   {op:'h',q:0},{op:'h',q:1},{op:'x',q:0},{op:'x',q:1},{op:'cz',q:0,t:1},{op:'x',q:0},{op:'x',q:1},{op:'h',q:0},{op:'h',q:1}],
+   note:'The CZ marks |11⟩ by flipping its sign. The next nine gates reflect every amplitude about the average, which turns that sign into probability 1. The final minus sign on |11⟩ is a global phase: no measurement can see it.'},
+];
+let MQ = {n:2, start:0, custom:null, steps:[], note:'', k:0};
+function startState(){
+  const N = 1 << MQ.n, s = [];
+  for(let i=0;i<N;i++) s.push([0,0]);
+  if(MQ.n === 1 && MQ.custom){
+    const a = MQ.custom[0], b = MQ.custom[1], r = Math.hypot(a, b);
+    if(r > 0){ s[0] = [a/r, 0]; s[1] = [b/r, 0]; return s; }
+  }
+  s[MQ.start] = [1, 0];
+  return s;
+}
+function runAll(){
+  const hand = [startState()], engine = [startState()], details = [];
+  MQ.steps.forEach(st => {
+    const h = handStep(hand[hand.length-1], MQ.n, st);
+    hand.push(h.out); details.push(h);
+    engine.push(apply(engine[engine.length-1], st.op, engineArgs(st)));
+  });
+  return {hand, engine, details};
+}
+function stateTable(amps, n){
+  let rows = '';
+  amps.forEach((a,i) => {
+    const r = C.abs(a), p = r*r, zero = r < EPS;
+    rows += '<tr class="' + (zero ? 'zero' : '') + '"><td>' + ket(i,n) + '</td><td>' + fmt(a) + '</td><td>' + r.toFixed(3) +
+      '</td><td>' + (zero ? '—' : (C.ang(a)/DEG).toFixed(1) + '°') + '</td><td>' + (100*p).toFixed(1) + '%</td></tr>';
+  });
+  return '<div class="mq-tablebox"><table class="mq-table"><thead><tr><th>state</th><th>amplitude</th><th>size</th><th>angle</th><th>chance</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+}
+function productLine(amps, n){
+  if(n !== 2) return '';
+  const l = C.mul(amps[0], amps[3]), r = C.mul(amps[1], amps[2]), same = C.abs(C.add(l, C.neg(r))) < 1e-9;
+  return '<div class="mq-line"><code>amp(00) × amp(11) = ' + fmt(l) + ',   amp(01) × amp(10) = ' + fmt(r) + '</code>' +
+    '<span class="tag ' + (same ? '' : 'cancel') + '">' + (same ? 'equal: describable one qubit at a time' : 'not equal: the qubits are entangled') + '</span></div>';
+}
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function mqRender(){
+  const run = runAll(), K = MQ.steps.length, k = Math.min(MQ.k, K), n = MQ.n;
+  MQ.k = k;
+  const strip = $('mq-strip'); strip.textContent = '';
+  const b0 = document.createElement('button'); b0.type='button'; b0.textContent='start'; b0.className = k===0 ? 'now' : 'done';
+  b0.onclick = () => {MQ.k = 0; mqRender()}; strip.appendChild(b0);
+  MQ.steps.forEach((st,i) => {const b = document.createElement('button'); b.type='button'; b.textContent = shortName(st);
+    b.className = (i+1===k) ? 'now' : ((i+1<k) ? 'done' : ''); b.onclick = () => {MQ.k = i+1; mqRender()}; strip.appendChild(b)});
+  $('mq-pos').textContent = K ? 'step ' + k + ' of ' + K : 'no steps yet';
+  $('mq-prev').disabled = k === 0; $('mq-next').disabled = k === K;
+  let html = '';
+  if(k === 0){
+    html += '<p class="mq-title">Start</p><p class="mq-why">' + (MQ.n === 1 && MQ.custom ?
+      'Your amounts, scaled so the chances add up to 100%: each is divided by √(a² + b²).' :
+      'Every qubit starts in a definite state, so one amplitude is 1 and the rest are 0.') + '</p>';
+    html += stateTable(run.hand[0], n);
+    if(K) html += '<p class="mq-why">Tap Next, or a step above, to see its maths.</p>';
+  } else {
+    const st = MQ.steps[k-1], d = run.details[k-1];
+    html += '<p class="mq-title">Step ' + k + ': ' + stepName(st) + '</p><p class="mq-why">' + WHY[st.op] + '</p>';
+    if(d.matrix){
+      const M = d.matrix;
+      html += '<div class="mq-mat"><span>matrix</span><span class="grid"><span>' + fmt(M[0][0]) + '</span><span>' + fmt(M[0][1]) +
+        '</span><span>' + fmt(M[1][0]) + '</span><span>' + fmt(M[1][1]) + '</span></span></div>';
+    }
+    html += '<div class="mq-lines">' + d.lines.map(L => '<div class="mq-line"><code>' + esc(L.text) + '</code>' +
+      (L.tag ? '<span class="tag ' + L.tag[0] + '">' + L.tag[1] + '</span>' : '') + '</div>').join('') + '</div>';
+    html += '<p class="mq-sub">After this step</p>' + stateTable(run.hand[k], n);
+    if(n === 2 && (st.op === 'cnot' || st.op === 'cz' || k === K)) html += '<div class="mq-lines">' + productLine(run.hand[k], n) + '</div>';
+    const diff = dist(run.hand[k], run.engine[k]);
+    html += '<p class="mq-ok">' + (diff < EPS ?
+      'Check: the hand maths and the engine <b>agree</b> (largest difference ' + diff.toExponential(1) + ').' :
+      '<span class="bad">Check failed: the hand maths and the engine disagree by ' + diff.toExponential(2) + '. Do not trust this step.</span>') + '</p>';
+    if(k === K && MQ.note) html += '<p class="mq-why">' + MQ.note + '</p>';
+  }
+  $('mq-step').innerHTML = html;
+}
+function mqFillSelects(){
+  const n = +$('mq-n').value, st = $('mq-start'), keepStart = st.value;
+  st.textContent = '';
+  for(let i=0;i<(1<<n);i++){const o = document.createElement('option'); o.value = String(i); o.textContent = ket(i,n); st.appendChild(o)}
+  if(n === 1){const o = document.createElement('option'); o.value = 'custom'; o.textContent = 'your own amounts'; st.appendChild(o)}
+  if([...st.options].some(o => o.value === keepStart)) st.value = keepStart;
+  ['mq-q','mq-t'].forEach(id => {const s = $(id), keep = s.value; s.textContent = '';
+    for(let q=0;q<n;q++){const o = document.createElement('option'); o.value = String(q); o.textContent = 'qubit ' + q; s.appendChild(o)}
+    if(keep !== '' && +keep < n) s.value = keep;});
+  if(n > 1 && $('mq-t').value === $('mq-q').value) $('mq-t').value = String((+$('mq-q').value + 1) % n);
+}
+function mqGateUI(){
+  const g = $('mq-gate').value, two = g === 'cnot' || g === 'cz';
+  $('mq-tgrp').hidden = !two; $('mq-angrp').hidden = !(g === 'phase' || g === 'ry');
+  $('mq-q-l').textContent = g === 'cnot' ? 'control' : (two ? 'first qubit' : 'qubit');
+}
+function mqStartFromForm(){
+  MQ.n = +$('mq-n').value;
+  const v = $('mq-start').value;
+  $('mq-custom').hidden = v !== 'custom';
+  if(v === 'custom'){
+    const a = parseFloat($('mq-a').value), b = parseFloat($('mq-b').value);
+    if(!isFinite(a) || !isFinite(b) || (a === 0 && b === 0)){ $('mq-hint').textContent = 'Give at least one non-zero amount.'; return false; }
+    MQ.custom = [a, b]; MQ.start = 0;
+  } else { MQ.custom = null; MQ.start = +v; }
+  return true;
+}
+function mqLoad(L){
+  $('mq-n').value = String(L.n); mqFillSelects(); $('mq-start').value = String(L.start); $('mq-custom').hidden = true;
+  MQ = {n:L.n, start:L.start, custom:null, steps:L.steps.map(s => Object.assign({}, s)), note:L.note, k:0};
+  [...$('mq-lessons').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.key === L.key)));
+  $('mq-hint').textContent = 'Lesson loaded. Step through it, or change it: anything you add goes on the end.';
+  mqRender();
+}
+LESSONS.forEach(L => {const b = document.createElement('button'); b.type='button'; b.textContent = L.title; b.dataset.key = L.key;
+  b.onclick = () => mqLoad(L); $('mq-lessons').appendChild(b)});
+function mqMine(){ MQ.note = ''; [...$('mq-lessons').children].forEach(b => b.setAttribute('aria-pressed', 'false')); }
+$('mq-n').onchange = () => {mqFillSelects(); mqMine(); MQ.steps = []; MQ.k = 0; mqStartFromForm(); $('mq-hint').textContent = 'New start. Add a step.'; mqRender()};
+$('mq-start').onchange = () => {mqMine(); if(mqStartFromForm()){ MQ.k = 0; mqRender(); }};
+['mq-a','mq-b'].forEach(id => { $(id).oninput = () => {mqMine(); if(mqStartFromForm()){ MQ.k = 0; mqRender(); }}; });
+$('mq-gate').onchange = mqGateUI;
+$('mq-q').onchange = () => {const n = MQ.n; if(n > 1 && $('mq-t').value === $('mq-q').value) $('mq-t').value = String((+$('mq-q').value + 1) % n)};
+$('mq-add').onclick = () => {
+  if(MQ.steps.length >= 16){ $('mq-hint').textContent = 'That is the limit, 16 steps. Undo one first.'; return; }
+  const op = $('mq-gate').value, q = +$('mq-q').value, st = {op, q};
+  if(op === 'cnot' || op === 'cz'){
+    if(MQ.n < 2){ $('mq-hint').textContent = 'Two-qubit gates need at least 2 qubits.'; return; }
+    st.t = +$('mq-t').value;
+    if(st.t === q){ $('mq-hint').textContent = 'Pick two different qubits.'; return; }
+  }
+  if(op === 'phase' || op === 'ry'){
+    const deg = parseFloat($('mq-ang').value);
+    if(!isFinite(deg)){ $('mq-hint').textContent = 'Type an angle in degrees, for example 90.'; return; }
+    st.deg = deg;
+  }
+  mqMine(); MQ.steps.push(st); MQ.k = MQ.steps.length;
+  $('mq-hint').textContent = 'Added ' + stepName(st) + '.'; mqRender();
+};
+$('mq-undo').onclick = () => {MQ.steps.pop(); MQ.k = Math.min(MQ.k, MQ.steps.length); mqMine(); mqRender()};
+$('mq-clear').onclick = () => {MQ.steps = []; MQ.k = 0; mqMine(); $('mq-hint').textContent = 'Cleared. The start is unchanged.'; mqRender()};
+$('mq-prev').onclick = () => {if(MQ.k > 0){MQ.k--; mqRender()}};
+$('mq-next').onclick = () => {if(MQ.k < MQ.steps.length){MQ.k++; mqRender()}};
+/* Self-check on load: every lesson by hand vs engine, plus proof the check can fail. */
+(function mqSelfCheck(){
+  let steps = 0, worst = 0;
+  const saved = MQ;
+  LESSONS.forEach(L => {
+    MQ = {n:L.n, start:L.start, custom:null, steps:L.steps, note:'', k:0};
+    const r = runAll();
+    for(let i=1;i<r.hand.length;i++){ worst = Math.max(worst, dist(r.hand[i], r.engine[i])); steps++; }
+  });
+  MQ = {n:1, start:0, custom:null, steps:[{op:'h',q:0}], note:'', k:0};
+  const good = runAll(), broken = good.engine[1].map((a,i) => i === 1 ? C.neg(a) : a);
+  const caught = dist(good.hand[1], broken) > 1e-3;
+  MQ = saved;
+  const ok = worst < EPS && caught;
+  window.__mqcheck = {steps, worst, caught, ok};
+  $('mq-selfcheck').innerHTML = ok ?
+    'On load: hand maths vs engine <b>agree</b> on all ' + steps + ' lesson steps (largest difference ' + worst.toExponential(1) + '), and a deliberately wrong step is caught.' :
+    '<span class="bad">On load the self-check failed</span> (difference ' + worst.toExponential(2) + ', wrong step caught: ' + caught + ').';
+})();
+mqFillSelects(); mqGateUI(); mqLoad(LESSONS[0]);
+choose(QDATA[0]);
+
+/* ---- tabs (#qubits / #waves) ---- */
+function show(){
+  const q = location.hash === '#qubits';
+  $('v-qubits').hidden = !q; $('v-waves').hidden = q;
+  $('t-waves').setAttribute('aria-pressed', String(!q)); $('t-qubits').setAttribute('aria-pressed', String(q));
+  if(!q && typeof all === 'function') all();
+  if(q) stop();
+}
+$('t-waves').onclick = () => {location.hash = 'waves'};
+$('t-qubits').onclick = () => {location.hash = 'qubits'};
+addEventListener('hashchange', show);
+show();
+})();
+</script>
